@@ -1,0 +1,11 @@
+{
+  "name": "microbit-teak",
+  "version": "1.0.0-b1",
+  "description": "The teak runtime for the micro:bit",
+  "license": "MIT",
+  "dependencies": {
+    "microbit": "lancaster-university/microbit"
+  },
+  "targetDependencies": {},
+  "bin": "./source"
+}

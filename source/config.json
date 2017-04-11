@@ -1,0 +1,13 @@
+{
+    "microbit-dal": {
+        "bluetooth": {
+            "enabled": 1,
+            "pairing_mode": 0,
+            "open": 1,
+            "tx_power": 2,
+            "dfu_service": 0,
+            "whitelist": 0,
+        },
+        "gatt_table_size": "0x600"
+    }
+}
