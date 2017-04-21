@@ -18,5 +18,16 @@ micro:bit's pseudo USB drive. If only one device is plugged in the following com
 should work well.
 
 ```
-cp ./build/bbc-microbit-classic-gcc/source/microbit-samples-combined.hex /Volumes/"MICROBIT"
+cp ./build/bbc-microbit-classic-gcc/source/microbit-teak-combined.hex /Volumes/"MICROBIT"
 ```
+
+To update the yotta modules such as microbit-dal, bluetooth, nrf51. Use the Yotta update
+command.
+```
+yt update
+```
+Note, I seen scenarios where file system permission have gotten confused. Most likely by doing
+an update with sudo. If you get access errors, you may need to fix ownership settings with chown.
+check `~/.yotta`, `project/.yotta_modules`, and `project/.yotta_targets`
+
+file ownership  

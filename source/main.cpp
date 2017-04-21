@@ -24,10 +24,13 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 
 MicroBit uBit;
+//MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
+//MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
+
 ManagedString eom(":");
 
-SPI spi(MOSI, MISO, SCK);
+ SPI spi(MOSI, MISO, SCK);
 
 int connected = 0;
 
@@ -36,7 +39,7 @@ void onConnected(MicroBitEvent)
     uBit.display.scroll("C");
     connected = 1;
     return;
-    //    uart->putc('z', ASYNC);
+    // uart->putc('z', ASYNC);
     // mobile app will send ASCII strings terminated with the colon character
     ManagedString eom(":");
 }
@@ -66,15 +69,20 @@ void onData(MicroBitEvent)
 {
   // If the event was called there should be a message
   ManagedString buff = uart->readUntil(eom, ASYNC);
-
+  StringData *s = buff.leakData();
+  // Internal buffer is null terminated as well.
+  char* str = s->data;
+  int len = strlen(str);
   // one command to start with, the picture display
   // P0123456789:
   // the numebers are hex, the five bits are packed into two hex digits.
-  if ((buff.charAt(0) == 'P') && (buff.length() >= 11)) {
-    int charPos = 1;
+  if ((strncmp(str, "(px", 3) == 0) && len >= 14) {
+    str += 3;
     for (int i = 0; i < 5; i++) {
-      char c1 = hexCharToInt(buff.charAt(charPos++));
-      char c2 = hexCharToInt(buff.charAt(charPos++));
+      char c1 = hexCharToInt(*str);
+      str++;
+      char c2 = hexCharToInt(*str);
+      str++;
       image.setPixelValue(0, i, c1 & 0x01);
       image.setPixelValue(1, i, c2 & 0x08);
       image.setPixelValue(2, i, c2 & 0x04);
@@ -82,14 +90,30 @@ void onData(MicroBitEvent)
       image.setPixelValue(4, i, c2 & 0x01);
     }
     uBit.display.print(image);
+  } else if ((strncmp(str, "(sv", 3) == 0) && len >= 5) {
+    str += 3;
+    uBit.display.scroll(len);
+  } else if ((strncmp(str, "(mo", 3) == 0) && len >= 5) {
+    str += 3;
+    uBit.display.scroll(len);
   } else {
-    uBit.display.print(buff.length());
+    uBit.display.scroll(len);
   }
-  //https://lancaster-university.github.io/microbit-docs/ubit/display/
+
+  s->decr();
 }
+
+int servoValue = 30;
 
 void onButtonA(MicroBitEvent)
 {
+  uBit.io.P1.setServoValue(servoValue);
+
+  servoValue += 10;
+  if (servoValue > 160) {
+    servoValue = 30;
+  }
+
     if (connected == 0) {
         return;
     }
@@ -99,7 +123,7 @@ void onButtonA(MicroBitEvent)
 
 void onButtonB(MicroBitEvent)
 {
-    spi.write('B');
+  //  spi.write('B');
     uBit.display.scroll("B");
 //    uBit.io.P0.setDigitalValue(1);
     if (connected == 0) {
@@ -126,6 +150,7 @@ int main()
     spi.format(8,3);
     spi.frequency(1000000);
 
+    uBit.io.P1.setServoValue(30);
 
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
@@ -144,12 +169,14 @@ int main()
     // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
     // sit in the idle task forever, in a power efficient sleep.
     int dout = 0;
-    char c = 0;
+  //  char c = 0;
     while(1) {
-        fiber_sleep(500);
+        fiber_sleep(100);
+
+      //  uBit.io.P1.setServoValue(servoValue);
         uBit.io.P0.setDigitalValue(dout);
         dout = !dout;
-        spi.write(c++);
+      //  spi.write(c++);
 
         if (connected) {
 //          uart->putc('z', ASYNC);
