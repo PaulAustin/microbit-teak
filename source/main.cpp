@@ -24,8 +24,8 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 
 MicroBit uBit;
-//MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
-//MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
+MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
+MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
 
 ManagedString eom(":");
@@ -164,6 +164,13 @@ int main()
     uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
     uBit.display.scroll("SDG5");
     uart->eventOn(eom, ASYNC);
+
+    accelerometer.setRange(4);
+    int p = accelerometer.getPeriod();
+    int r = accelerometer.getRange();
+    uBit.display.scroll(p);
+    uBit.display.scroll("/");
+    uBit.display.scroll(r);
 
     // If main exits, there may still be other fibers running or registered event handlers etc.
     // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
