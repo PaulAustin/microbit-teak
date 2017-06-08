@@ -89,9 +89,9 @@ void PWMServoMotor::BumpPower() {
 }
 
 int g_servoPWMArray[] = {
-  1000,1050,1100,1150,1200,1250,1300,1350,1400,1450,
-  1500,
-  1550,1600,1650,1700,1750,1800,1850,1900,1950,2000
+  1000,1050,1100,1150,1200,1250,1300,1350,1400,1425,
+  1450,
+  1490,1500,1505,1510,1515,1520,1525,1530,1540,1550
 };
 
 void PWMServoMotor::SetPower(int power) {
@@ -254,12 +254,12 @@ void onData(MicroBitEvent)
     str += 4;
     value = atoi(str);
     s0.SetPower(value);
-  //  s1.SetPower(0);
+  //  s1.SetPower(-value);
   } else if ((strncmp(str, "(m2:", 4) == 0) && len >= 5) {
     str += 4;
     value = atoi(str);
     s0.SetPower(value);
-  //  s1.SetPower(value);
+  //  s1.SetPower(-value);
   } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
     // Notes come in the form 'C4' note, octave
     str += 4;
@@ -304,7 +304,10 @@ void onButtonA(MicroBitEvent)
 void onButtonB(MicroBitEvent)
 {
   PlayNote(3, 4);
-  ServoStop();
+  s0.SetPower(0);
+  s1.SetPower(0);
+
+  //ServoStop();
 
   // PFA s0.Enable(!s0.m_enabled);
 
