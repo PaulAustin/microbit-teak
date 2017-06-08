@@ -28,6 +28,9 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
+void ServoMessage(int period);
+void ServoStop();
+
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
 
@@ -53,14 +56,15 @@ public:
   int m_power;
 };
 
-int PWMServoMotor::g_powerMap [] = { 60, 69, 75, 85, 98, 105, 115 };
+//int PWMServoMotor::g_powerMap [] = { 60, 69, 75, 85, 98, 105, 115 };
+int PWMServoMotor::g_powerMap [] = { 1500, 1200, 1100, 1500, 1200, 1100, 1500 };
 
 void PWMServoMotor::Enable(bool enabled) {
   m_enabled = enabled;
   if (enabled) {
-    SetPower(m_power);
+//    SetPower(m_power);
   } else {
-    SetPower(3);
+//    SetPower(3);
   }
 }
 
@@ -69,7 +73,7 @@ PWMServoMotor::PWMServoMotor(int servo) {
   m_delta = 1;
   m_power = 3;
   m_enabled = true;
-  SetPower(m_power);
+//  SetPower(m_power);
 }
 
 void PWMServoMotor::BumpPower() {
@@ -81,11 +85,29 @@ void PWMServoMotor::BumpPower() {
     m_power = 1;
     m_delta = 1;
   }
-  SetPower(m_power);
+  //SetPower(m_power);
 }
 
+int g_servoPWMArray[] = {
+  1000,1050,1100,1150,1200,1250,1300,1350,1400,1450,
+  1500,
+  1550,1600,1650,1700,1750,1800,1850,1900,1950,2000
+};
+
 void PWMServoMotor::SetPower(int power) {
-  int pwm = g_powerMap[power];
+  // Convert +/- 100% value to 0-20 index
+  int index = power/10;
+  index += 10;
+  if (index < 0) {
+     index = 0;
+  } else if (index > 20) {
+    index = 20;
+  }
+
+  int uSecPeriod = g_servoPWMArray[index];
+  uBit.display.print(uSecPeriod);
+  ServoMessage(uSecPeriod);
+  /*
   if (m_servo == 0) {
     uBit.io.P0.setServoValue(pwm);
   } else if (m_servo == 1) {
@@ -93,6 +115,7 @@ void PWMServoMotor::SetPower(int power) {
   } else if (m_servo == 2) {
     uBit.io.P2.setServoValue(pwm);
   }
+  */
 }
 
 int connected = 0;
@@ -127,28 +150,50 @@ int hexCharToInt(char c) {
   return 0;
 }
 
+void ServoStop() {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(0x80 | SERVO_Run);
+  spi.write(0x00);    // turn off all servos
+  uBit.io.P16.setDigitalValue(1);
+  //fiber_sleep(100);
+}
+
 void ServoMessage(int period) {
   uBit.io.P16.setDigitalValue(0);
+  spi.write(0x80 | SERVO_Run);
+  spi.write(0x07);
+  fiber_sleep(100);
+
   spi.write(0x80 | SERVO_Set1);
-  // 1500 usec = 1.5 msec  0x05DC
-  spi.write((period & 0xff00) >> 8);
+  spi.write((period & 0x7f00) >> 8);
   spi.write((period & 0xff));
   spi.write(0x00);
   spi.write(0x00);
-
-  spi.write(0x80 | SERVO_Run);
-  spi.write(0x07);
+  fiber_sleep(100);
+  spi.write(0x80 | SERVO_Set2);
+  spi.write((period & 0x7f00) >> 8);
+  spi.write((period & 0xff));
+  spi.write(0x00);
+  spi.write(0x00);
+  fiber_sleep(100);
+//  spi.write(0x80 | SERVO_Run);
+//  spi.write(0x07);
   uBit.io.P16.setDigitalValue(1);
-
 }
 
-void PlayNote(int frequency, int duration) {
+void PlayNote(int note, int octave) {
   // set chip enable
+  if (note > 6 || note < 0) {
+    note = 0;
+  }
+  if (octave > 8 || octave < 0) {
+    octave = 4;
+  }
   uBit.io.P16.setDigitalValue(0);
   spi.write(0x80 | BEEP_PlayNote);
-  spi.write(0x00 | 0x04);
+  spi.write((note << 4) | octave);
   uBit.io.P16.setDigitalValue(1);
-  fiber_sleep(100);
+  //fiber_sleep(100);
 
 /*
   // Set note
@@ -208,17 +253,23 @@ void onData(MicroBitEvent)
   } else if ((strncmp(str, "(mo:", 4) == 0) && len >= 5) {
     str += 4;
     value = atoi(str);
-    uBit.io.P0.setServoValue(value);
-    uBit.display.scroll(value);
-  } else if ((strncmp(str, "(mo:", 4) == 0) && len >= 5) {
+    s0.SetPower(value);
+  //  s1.SetPower(0);
+  } else if ((strncmp(str, "(m2:", 4) == 0) && len >= 5) {
     str += 4;
     value = atoi(str);
-    uBit.io.P0.setServoValue(value);
-    uBit.display.scroll(value);
+    s0.SetPower(value);
+  //  s1.SetPower(value);
   } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
+    // Notes come in the form 'C4' note, octave
     str += 4;
-    value = atoi(str);
-    PlayNote(value, 250);
+    value = str[0] - 'A';
+    if ((value < 0) || (value > 6)) {
+      value =0;
+    }
+    int octave = str[1] - '0';
+    PlayNote(value, octave);
+    uBit.display.print(value);
   } else {
     uBit.display.scroll(str);
   }
@@ -231,7 +282,7 @@ int servoValueB = 70;
 
 void onButtonA(MicroBitEvent)
 {
-  uBit.display.print('s');
+  //uBit.display.print('s');
   ServoMessage(1500);
 //  s0.BumpPower();
 //  uBit.display.print(s1.m_power);
@@ -252,7 +303,11 @@ void onButtonA(MicroBitEvent)
 
 void onButtonB(MicroBitEvent)
 {
-  s0.Enable(!s0.m_enabled);
+  PlayNote(3, 4);
+  ServoStop();
+
+  // PFA s0.Enable(!s0.m_enabled);
+
   /*
   uBit.io.P16.setDigitalValue(0);
   fiber_sleep(100);
@@ -268,11 +323,12 @@ void onButtonB(MicroBitEvent)
   spi.write(0);
   fiber_sleep(100);
   */
+  /* PFA
   PlayNote(0, 250);
 
   uBit.display.print('m');
   ServoMessage(1200);
-
+*/
 /*
 b0 = pins.spiWrite(freq >> 8)
 b1 = pins.spiWrite(freq & 0xFF)
@@ -283,7 +339,7 @@ b3 = pins.spiWrite(dur & 0xFF)
     if (connected == 0) {
         return;
     }
-    uart->send(ManagedString("(button-down(b))"));
+  //  uart->send(ManagedString("(button-down(b))"));
 }
 
 void onButtonAB(MicroBitEvent)
@@ -300,8 +356,8 @@ int main()
   #if  1
     // Initialise the micro:bit runtime.
     uBit.init();
-    uBit.io.P0.setDigitalValue(0);
-    uBit.io.P1.setDigitalValue(0);
+    //uBit.io.P0.setDigitalValue(0);
+    //uBit.io.P1.setDigitalValue(0);
     spi.format(8, 3);
     spi.frequency(1000000);
 
@@ -315,7 +371,7 @@ int main()
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
     uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
-    uBit.display.scroll("SDG5");
+    uBit.display.scroll("SDG6");
     uart->eventOn(eom, ASYNC);
 
     accelerometer.setRange(4);
