@@ -30,6 +30,7 @@ MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
 void ServoMessage(int period, int servo);
 void ServoStop();
+void stopAll();
 
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
@@ -283,11 +284,21 @@ void onData(MicroBitEvent)
     int octave = str[1] - '0';
     PlayNote(value, octave);
     //uBit.display.print(value);
+  } else if ((strncmp(str, "(stop)", 6) == 0)) {
+    stopAll();
   } else {
     uBit.display.scroll(str);
   }
 
   s->decr();
+}
+
+void stopAll()
+{
+  s0.SetPower(0, 1);
+  s1.SetPower(0, 2);
+
+  uBit.display.clear();
 }
 
 int servoValueA = 75;
