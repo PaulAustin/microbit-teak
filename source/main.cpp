@@ -267,12 +267,12 @@ void onData(MicroBitEvent)
     str += 4;
     value = atoi(str);
     s0.SetPower(value,1);
-    s1.SetPower(0,2);
+    //s1.SetPower(0,2);
   //  s1.SetPower(-value);
   } else if ((strncmp(str, "(m2:", 4) == 0) && len >= 5) {
     str += 4;
     value = atoi(str);
-    s0.SetPower(value,1);
+    //s0.SetPower(value,1);
     s1.SetPower(-value,2);
   } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
     // Notes come in the form 'C4' note, octave
