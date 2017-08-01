@@ -155,7 +155,7 @@ void ServoStop() {
   uBit.io.P16.setDigitalValue(0);
   spi.write(0x80 | SERVO_Run);
   spi.write(0x00);    // turn off all servos
-  fiber_sleep(100);
+  //fiber_sleep(100);
   uBit.io.P16.setDigitalValue(1);
   //fiber_sleep(100);
 }
@@ -172,7 +172,7 @@ void ServoMessage(int period, int servo) {
   uBit.io.P16.setDigitalValue(0);
   spi.write(0x80 | SERVO_Run);
   spi.write(0x07);
-  fiber_sleep(100);
+  //fiber_sleep(100);
 
   if (servo == 1) {
     spi.write(0x80 | SERVO_Set1);
@@ -180,19 +180,19 @@ void ServoMessage(int period, int servo) {
     spi.write((period & 0xff));
     spi.write(0x00);
     spi.write(0x00);
-    fiber_sleep(100);
+    //fiber_sleep(100);
   } else if (servo == 2) {
     spi.write(0x80 | SERVO_Set2);
     spi.write((period & 0x7f00) >> 8);
     spi.write((period & 0x00ff));
     spi.write(0x00);
     spi.write(0x00);
-    fiber_sleep(100);
+    //fiber_sleep(100);
   }
 //  spi.write(0x80 | SERVO_Run);
 //  spi.write(0x07);
   uBit.io.P16.setDigitalValue(1);
-  fiber_sleep(100);
+  //fiber_sleep(100);
 }
 
 void PlayNote(int note, int octave) {
