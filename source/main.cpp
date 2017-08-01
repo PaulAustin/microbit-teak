@@ -263,18 +263,26 @@ void onData(MicroBitEvent)
     value = atoi(str);
     uBit.io.P1.setServoValue(value);
     uBit.display.scroll("S");
-  } else if ((strncmp(str, "(mo:", 4) == 0) && len >= 5) {
-    str += 4;
-    value = atoi(str);
-    s0.SetPower(value,1);
-    //s1.SetPower(0,2);
-  //  s1.SetPower(-value);
-  } else if ((strncmp(str, "(m2:", 4) == 0) && len >= 5) {
-    str += 4;
-    value = atoi(str);
-    //s0.SetPower(value,1);
-    s1.SetPower(-value,2);
-  } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
+  } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
+    str += 3;
+    if(strncmp(str, "(1 2)", 5) == 0){
+      if(strncmp(str + 6, "d", 1) == 0){
+        value = atoi(str + 8);
+        s0.SetPower(value,1);
+        s1.SetPower(-value,2);
+      }
+    } else if(strncmp(str, "1", 1) == 0){
+      if(strncmp(str + 2, "d", 1) == 0){
+        value = atoi(str + 4);
+        s0.SetPower(value,1);
+      }
+    } else if(strncmp(str, "2", 1) == 0){
+      if(strncmp(str + 2, "d", 1) == 0){
+        value = atoi(str + 4);
+        s1.SetPower(-value,2);
+      }
+    }
+} else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
     // Notes come in the form 'C4' note, octave
     str += 4;
     value = str[0] - 'A';
