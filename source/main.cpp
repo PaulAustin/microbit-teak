@@ -43,6 +43,25 @@ ManagedString eom(";");
 
 SPI spi(MOSI, MISO, SCK);
 
+void SetMotoPower(int motor, int power);
+
+
+void SetMotoPower(int motor, int power, bool runAsWell)
+{
+  uBit.io.P16.setDigitalValue(0);
+  if (runAsWell) {
+    spi.write(0x80 | MOTOR_Run);
+    spi.write(0x03);
+    fiber_sleep(1);
+  }
+  spi.write(0x80 | MOTOR_Set1);
+  spi.write(0x00);
+  spi.write((char)power);
+  spi.write(0x00);
+  spi.write(0x00);
+  uBit.io.P16.setDigitalValue(1);
+}
+
 class PWMServoMotor {
 public:
   PWMServoMotor(int servo);
@@ -150,6 +169,42 @@ int hexCharToInt(char c) {
   }
   return 0;
 }
+
+
+void ReadTBCSystemStatus() {
+  //char send[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+  char reply[8];
+  uBit.io.P16.setDigitalValue(0);
+#if 1
+  // spi.write(0x80 | SYS_Status);
+  spi.write(SYS_Status);  // Read class
+  reply[0] = spi.write(0); //HW
+  reply[1] = spi.write(1); //FW Y
+  reply[2] = spi.write(2); //FW M
+  reply[3] = spi.write(3); //FW D
+  reply[4] = spi.write(4); // Self test 1
+  reply[5] = spi.write(5); // Self test 2
+  reply[6] = spi.write(6); // TBD
+  reply[7] = spi.write(7); // TBD
+#else
+  spi.write (send, 8, reply, 8);
+#endif
+
+uBit.io.P16.setDigitalValue(1);
+uBit.display.scroll((int)reply[4]);
+//uBit.display.scroll(reply[2]);
+
+/*
+SpiMem_Write(SYS_Status, SYS_Status_HW_Rev_Num, 1); 0
+SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Year, 17); 1
+SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Month, 8); 2
+SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Date, 42); 3
+SpiMem_Write(SYS_Status, SYS_Status_FW_Self_Test1, 35); 4
+SpiMem_Write(SYS_Status, SYS_Status_FW_Self_Test2, 36); 5
+*/
+
+}
+
 
 void ServoStop() {
   uBit.io.P16.setDigitalValue(0);
@@ -314,29 +369,23 @@ int servoValueB = 70;
 
 void onButtonA(MicroBitEvent)
 {
+  SetMotoPower(1, 100, true);
+  //ReadTBCSystemStatus();
   //uBit.display.print('s');
-  s0.SetPower(50,1);
-//  uBit.display.print(s1.m_power);
-/*
-  uBit.io.P0.setServoValue(servoValueA);
-  uBit.display.print(servoValueA-25/10);
-  servoValueA += 10;
-  if (servoValueA > 110) {
-    servoValueA = 75;
-  }
-*/
+//  s0.SetPower(50,1);
+
   if (connected == 0) {
       return;
   }
   uart->send(ManagedString("(button-down(a))"));
-  //  uBit.display.scroll("T");
 }
 
 void onButtonB(MicroBitEvent)
 {
-  PlayNote(3, 4);
-  s0.SetPower(0,1);
-  s0.SetPower(0,2);
+  SetMotoPower(1, 0, false);
+//  PlayNote(3, 4);
+//  s0.SetPower(0,1);
+//  s0.SetPower(0,2);
 
 //  ServoStop();
 
@@ -394,7 +443,7 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_HOLD, onABEvent);
-      uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
