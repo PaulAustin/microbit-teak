@@ -45,20 +45,21 @@ SPI spi(MOSI, MISO, SCK);
 
 void SetMotoPower(int motor, int power);
 
-
-void SetMotoPower(int motor, int power, bool runAsWell)
+void SetMotoPower(int motor, int power)
 {
+  if (motor < 1 || motor > 2)
+    return;
+
   uBit.io.P16.setDigitalValue(0);
-  if (runAsWell) {
-    spi.write(0x80 | MOTOR_Run);
-    spi.write(0x03);
-    fiber_sleep(1);
+  if (motor == 1) {
+    spi.write(0x80 | MOTOR_Set1);
+  } else {
+    spi.write(0x80 | MOTOR_Set2);
   }
-  spi.write(0x80 | MOTOR_Set1);
-  spi.write(0x00);
-  spi.write((char)power);
-  spi.write(0x00);
-  spi.write(0x00);
+  spi.write((power & 0x0000FF00) >> 8);
+  spi.write((power & 0x000000FF));
+  spi.write(0x00); // Zero means run indefinitely
+  spi.write(0x00); // Zero means run indefinitely
   uBit.io.P16.setDigitalValue(1);
 }
 
@@ -323,20 +324,21 @@ void onData(MicroBitEvent)
     if(strncmp(str, "(1 2)", 5) == 0){
       if(strncmp(str + 6, "d", 1) == 0){
         value = atoi(str + 8);
-        s0.SetPower(value,1);
-        s1.SetPower(-value,2);
+        SetMotoPower(1, value);
+        SetMotoPower(2, -value);
       }
-    } else if(strncmp(str, "1", 1) == 0){
-      if(strncmp(str + 2, "d", 1) == 0){
+    } else if(strncmp(str, "1", 1) == 0) {
+      if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
-        s0.SetPower(value,1);
+        SetMotoPower(1, value);
       }
-    } else if(strncmp(str, "2", 1) == 0){
-      if(strncmp(str + 2, "d", 1) == 0){
+    } else if(strncmp(str, "2", 1) == 0) {
+      if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
-        s1.SetPower(-value,2);
+        SetMotoPower(2, value);
       }
     }
+
 } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
     // Notes come in the form 'C4' note, octave
     str += 4;
@@ -358,9 +360,9 @@ void onData(MicroBitEvent)
 
 void stopAll()
 {
-  s0.SetPower(0, 1);
-  s1.SetPower(0, 2);
-
+  SetMotoPower(1, 0);
+  fiber_sleep(100);
+  SetMotoPower(2, 0);
   uBit.display.clear();
 }
 
@@ -369,7 +371,7 @@ int servoValueB = 70;
 
 void onButtonA(MicroBitEvent)
 {
-  SetMotoPower(1, 100, true);
+  SetMotoPower(1, 80);
   //ReadTBCSystemStatus();
   //uBit.display.print('s');
 //  s0.SetPower(50,1);
@@ -382,7 +384,7 @@ void onButtonA(MicroBitEvent)
 
 void onButtonB(MicroBitEvent)
 {
-  SetMotoPower(1, 0, false);
+  stopAll();
 //  PlayNote(3, 4);
 //  s0.SetPower(0,1);
 //  s0.SetPower(0,2);
