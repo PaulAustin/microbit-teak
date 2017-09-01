@@ -20,8 +20,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-#include "MicroBit.h"
+#include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
+#include "TeakTask.h"
 
 //#include "teak/source/tstring.h"
 //#include "teak/source/tnode.h"
@@ -335,7 +336,7 @@ void onData(MicroBitEvent)
     } else if(strncmp(str, "2", 1) == 0) {
       if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
-        SetMotoPower(2, value);
+        SetMotoPower(2, -value);
       }
     }
 
@@ -371,7 +372,12 @@ int servoValueB = 70;
 
 void onButtonA(MicroBitEvent)
 {
+  uBit.display.print('a');
   SetMotoPower(1, 80);
+  fiber_sleep(10);
+  SetMotoPower(2, 80);
+  fiber_sleep(10);
+
   //ReadTBCSystemStatus();
   //uBit.display.print('s');
 //  s0.SetPower(50,1);
@@ -384,6 +390,7 @@ void onButtonA(MicroBitEvent)
 
 void onButtonB(MicroBitEvent)
 {
+  uBit.display.print('b');
   stopAll();
 //  PlayNote(3, 4);
 //  s0.SetPower(0,1);
@@ -442,10 +449,17 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
+
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, TeakTaskManager::MBEventA);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, TeakTaskManager::MBEventB);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, TeakTaskManager::MBEventAB);
+
+    /*
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_HOLD, onABEvent);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
+    */
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
@@ -463,19 +477,10 @@ int main()
     // If main exits, there may still be other fibers running or registered event handlers etc.
     // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
     // sit in the idle task forever, in a power efficient sleep.
-    int dout = 0;
   //  char c = 0;
     while(1) {
         fiber_sleep(100);
-
-      //  uBit.io.P1.setServoValue(servoValue);
-    //    uBit.io.P0.setDigitalValue(dout);
-        dout = !dout;
-      //  spi.write(c++);
-
-        if (connected) {
-//          uart->putc('z', ASYNC);
-        }
+        TeakTaskManager::BackgroundTick();
       }
 
     //    release_fiber();
