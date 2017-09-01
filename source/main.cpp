@@ -478,9 +478,11 @@ int main()
     // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
     // sit in the idle task forever, in a power efficient sleep.
   //  char c = 0;
+
+    // Run the main loop
     while(1) {
         fiber_sleep(100);
-        TeakTaskManager::BackgroundTick();
+        TeakTaskManager::Tick();
       }
 
     //    release_fiber();

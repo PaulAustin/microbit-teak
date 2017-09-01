@@ -23,24 +23,26 @@ DEALINGS IN THE SOFTWARE.
 // A macro that make sit easy to make a small packed bitmaps
 // for the 5x5 display while leaving it 'possible' to read the
 // pattern instead of hex digits.
-#define MB_PACK_DISPLAY_BITS(_b1, _b2, _b3, _b4, _b5) \
-  ((_b1<<4) | (_b2<<3) | (_b3<<2) | (_b4<<1) | (_b4<<0))
+#define PACK_DISPLAY_BITS(_b1, _b2, _b3, _b4, _b5) \
+  ((_b1<<7) | (_b2<<6) | (_b3<<5) | (_b4<<4) | (_b5<<3))
 
 class TeakTask;
 
 // TeakMenu - routs events to the appropriate module
 class TeakTaskManager {
   public:
+    static void SetTask(TeakTask* pTask);
     static void MBEventA(MicroBitEvent mbEvt);
     static void MBEventB(MicroBitEvent mbEvt);
     static void MBEventAB(MicroBitEvent mbEvt);
-    static void BackgroundTick();
+    static void Tick();
   private:
     static TeakTask* m_currentTask;
+    static int       m_frameState;
 };
 
 class TeakTask {
-  virtual void Show(int) {};
-  virtual void Activate() {};
-  virtual void MB_Event(MicroBitEvent) {};
+  public:
+    virtual int Tick(int state) { return state; };
+    virtual void MB_Event(MicroBitEvent) {};
 };

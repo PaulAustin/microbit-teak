@@ -23,6 +23,9 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "TeakTask.h"
 
+
+extern MicroBit uBit;
+
 /*
 Menu state machines.
 
@@ -50,93 +53,162 @@ uint8_t *getBitmap()
 // being transfered to the main display.
 MicroBitImage g_menuImage;
 
+void DisplayPackedBits(char* packedBits)
+{
+  // Blast bits into the display.
+  uint8_t* bits = uBit.display.image.getBitmap();
+  int width = uBit.display.image.getWidth();
+  for(int y = 0; y < 5; y++) {
+    uint8_t* pByte = &bits[y * width];
+    int packedRow = packedBits[y];
+    *pByte = (packedRow & (0x01 << 7)) ? 1 : 0;       pByte++;
+    *pByte = (packedRow & (0x01 << 6)) ? 1 : 0;       pByte++;
+    *pByte = (packedRow & (0x01 << 5)) ? 1 : 0;       pByte++;
+    *pByte = (packedRow & (0x01 << 4)) ? 1 : 0;       pByte++;
+    *pByte = (packedRow & (0x01 << 3)) ? 1 : 0;
+  }
+}
 
-void TeakTaskManager::MBEventA(MicroBitEvent)
-{}
-void TeakTaskManager::MBEventB(MicroBitEvent)
-{}
-void TeakTaskManager::MBEventAB(MicroBitEvent)
-{}
-void TeakTaskManager::BackgroundTick()
-{}
+void TeakTaskManager::SetTask(TeakTask* pTask)
+{
+  if (m_currentTask) {
+    // message the task that its swapped out
+  }
+  m_currentTask = pTask;
+  if (m_currentTask) {
+    m_frameState = m_currentTask->Tick(m_frameState);
+  }
+}
+void TeakTaskManager::MBEventA(MicroBitEvent event)
+{
+  m_currentTask->MB_Event(event);
+}
+void TeakTaskManager::MBEventB(MicroBitEvent event)
+{
+  m_currentTask->MB_Event(event);
+}
+void TeakTaskManager::MBEventAB(MicroBitEvent event)
+{
+  m_currentTask->MB_Event(event);
+}
+void TeakTaskManager::Tick()
+{
+  m_frameState = m_currentTask->Tick(m_frameState);
+}
 
 //------------------------------------------------------------------------------
 // The initial task that starts when the BM boots.
-class MBBootTask : public TeakTask {
-//  virtual void Show(int frame);
-//  virtual void Activate();
-//  virtual void MB_Event(MicroBitEvent mbEvt);
+class BootTask : public TeakTask {
+  public:
+    virtual int Tick(int frame);
 };
-MBBootTask gBootTask;
+
+char BootFilm [] {
+  // five bytes per frame
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
+  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  //-----------------------------
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  //-----------------------------
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
+  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
+  //-----------------------------
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+};
+
+int BootTask::Tick(int state) {
+  DisplayPackedBits(BootFilm + ((state % 4) * 5));
+  return state + 1;
+}
+BootTask gBootTask;
 
 //------------------------------------------------------------------------------
 // A mini task for scrolling from one item to another.
 class MenuScrollTask : public TeakTask {
-  virtual void Show(int frame);
-//  virtual void Activate();
-//  virtual void MB_Event(MicroBitEvent mbEvt);
+  public:
+    virtual int Tick(int frame);
 };
 MenuScrollTask gScrollTask;
 
 //------------------------------------------------------------------------------
 // A task for direct control of the motors
-class MBMotorTask : public TeakTask {
-  virtual void Show(int frame);
+class MotorTask : public TeakTask {
+  public:
+    virtual int Tick(int frame);
 //  virtual void Activate();
 //  virtual void MB_Event(MicroBitEvent mbEvt);
 };
-MBMotorTask gMotorTask;
+MotorTask gMotorTask;
 
 //------------------------------------------------------------------------------
 // A task for running the users saved program.
 // Perhaps there are 2 or 3 programs
-class MBUserProgramTask : public TeakTask {
+class UserProgramTask : public TeakTask {
 //  virtual void Show(int frame);
 //  virtual void Activate();
 //  virtual void MB_Event(MicroBitEvent mbEvt);
 };
-MBUserProgramTask gUserProgramTask;
+UserProgramTask gUserProgramTask;
 
 //------------------------------------------------------------------------------
 // A teask to use the built-in level (accelerometer)
-class MBLevelTask  : public TeakTask {
+class LevelTask  : public TeakTask {
 //  virtual void Show(int frame) = 0;
 //  virtual void Activate() = 0;
 //  virtual void MB_Event(MicroBitEvent mbEvt) = 0;
 };
-MBLevelTask gLevelTask;
+LevelTask gLevelTask;
 
 //------------------------------------------------------------------------------
 // A teask to use the built-in temp
-class MBTempTask  : public TeakTask {
+class TempTask  : public TeakTask {
 //  virtual void Show(int frame) = 0;
 //  virtual void Activate() = 0;
 //  virtual void MB_Event(MicroBitEvent mbEvt) = 0;
 };
-MBTempTask gTempTask;
+TempTask gTempTask;
 
-void MenuScrollTask::Show(int frame) {
+int MenuScrollTask::Tick(int frame) {
   if (frame < 5) {
+    return frame + 1;
     // Merge the image for previous and next module
   } else {
     // Switch to the next module.
+    return 0;
   }
+
 }
 
 char MBMotorModeGlyph [] {
-  MB_PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  MB_PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  MB_PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
-  MB_PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  MB_PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
+  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
+  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
+  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
 };
 
-void MBMotorTask::Show(int frame)
+int MotorTask::Tick(int frame)
 {
     if (frame == 0) {
       //ShowImage(MBMotorModeGlyph);
     }
+    return frame + 1;
 }
+
 /*
   if (evt.value == MICROBIT_BUTTON_EVT_HOLD) {
     bAdvertising = !bAdvertising;
@@ -147,4 +219,6 @@ void MBMotorTask::Show(int frame)
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
+
 TeakTask* TeakTaskManager::m_currentTask = &gBootTask;
+int TeakTaskManager::m_frameState = 0;
