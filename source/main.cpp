@@ -375,12 +375,10 @@ void onButtonA(MicroBitEvent)
   uBit.display.print('a');
   SetMotoPower(1, 80);
   fiber_sleep(10);
-  SetMotoPower(2, 80);
-  fiber_sleep(10);
 
   //ReadTBCSystemStatus();
   //uBit.display.print('s');
-//  s0.SetPower(50,1);
+  //s0.SetPower(50,1);
 
   if (connected == 0) {
       return;
@@ -392,15 +390,10 @@ void onButtonB(MicroBitEvent)
 {
   uBit.display.print('b');
   stopAll();
-//  PlayNote(3, 4);
-//  s0.SetPower(0,1);
-//  s0.SetPower(0,2);
 
-//  ServoStop();
-
-    if (connected == 0) {
-        return;
-    }
+  if (connected == 0) {
+      return;
+  }
   //  uart->send(ManagedString("(button-down(b))"));
 }
 
@@ -450,16 +443,16 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
 
+#if 0
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, TeakTaskManager::MBEventA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, TeakTaskManager::MBEventB);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, TeakTaskManager::MBEventAB);
-
-    /*
+#else
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_HOLD, onABEvent);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
-    */
+#endif
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
