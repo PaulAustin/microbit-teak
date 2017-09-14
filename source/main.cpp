@@ -23,24 +23,21 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
+#include "TrashbotsController.h"
 
 //#include "teak/source/tstring.h"
 //#include "teak/source/tnode.h"
 
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
-void ServoMessage(int period, int servo);
-void ServoStop();
-void stopAll();
 
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
 ManagedString eom(";");
 
+MicroBitThermometer thermometer;
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
-
-#include "TrashbotsController.h"
 
 int connected = 0;
 
@@ -173,6 +170,13 @@ void onButtonB(MicroBitEvent)
   if (connected == 0) {
       return;
   }
+  char str[80];
+  sprintf(str, "(accel(%i))", accelerometer.getX()); //
+  uart->send(ManagedString(str));
+
+  char str2[80];
+  sprintf(str2, "(temp(%i))", thermometer.getTemperature()); //
+  uart->send(ManagedString(str2));
   //  uart->send(ManagedString("(button-down(b))"));
 }
 
@@ -241,6 +245,7 @@ int main()
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
 
     accelerometer.setRange(4);
+    //thermometer.set
 //    int p = accelerometer.getPeriod();
 //    int r = accelerometer.getRange();
   /*  uBit.display.scroll(p);

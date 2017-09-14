@@ -20,6 +20,9 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#ifndef TRASHBOTS_CONTROLLER_SERVICE_H
+#define TRASHBOTS_CONTROLLER_SERVICE_H
+
 enum
 {
 Reserved0,
@@ -102,3 +105,5 @@ extern SPI spi;
 void PlayNote(int value, int octave);
 void SetMotoPower(int motor, int power);
 void stopAll();
+
+#endif
