@@ -23,7 +23,6 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "TeakTask.h"
 
-
 extern MicroBit uBit;
 
 /*
@@ -41,184 +40,360 @@ in n/2 button taps.
 
 */
 
-/*
-uint8_t *getBitmap()
-{
-    return ptr->data;
-}
-
-*/
-
 // Images are unpacked or merged in one buffer before
 // being transfered to the main display.
-MicroBitImage g_menuImage;
+extern TeakTask *gTasks[];
+TeakTaskManager gTaskManager;
 
-void DisplayPackedBits(char* packedBits)
+TeakTaskManager::TeakTaskManager()
 {
-  // Blast bits into the display.
-  uint8_t* bits = uBit.display.image.getBitmap();
-  int width = uBit.display.image.getWidth();
-  for(int y = 0; y < 5; y++) {
-    uint8_t* pByte = &bits[y * width];
-    int packedRow = packedBits[y];
-    *pByte = (packedRow & (0x01 << 7)) ? 1 : 0;       pByte++;
-    *pByte = (packedRow & (0x01 << 6)) ? 1 : 0;       pByte++;
-    *pByte = (packedRow & (0x01 << 5)) ? 1 : 0;       pByte++;
-    *pByte = (packedRow & (0x01 << 4)) ? 1 : 0;       pByte++;
-    *pByte = (packedRow & (0x01 << 3)) ? 1 : 0;
-  }
+    // Start whth the boot task.
+    m_currentTask = kBootTask;
 }
 
-void TeakTaskManager::SetTask(TeakTask* pTask)
+void TeakTaskManager::Event(MicroBitEvent event)
 {
-  if (m_currentTask) {
-    // message the task that its swapped out
-  }
-  m_currentTask = pTask;
-  if (m_currentTask) {
-    m_frameState = m_currentTask->Tick(m_frameState);
-  }
+    TaskId nextTask = CurrentTask()->Event(event);
+
+    int newImage = CurrentTask()->PackedImage();
+    if (newImage != m_currentImage)  {
+        PBmapUnpack(newImage, uBit.display.image.getBitmap(), uBit.display.image.getWidth());
+        m_currentImage = newImage;
+    }
+    if (nextTask != kSameTask) {
+        m_currentTask = nextTask;
+    }
 }
-void TeakTaskManager::MBEventA(MicroBitEvent event)
+
+int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 {
-  m_currentTask->MB_Event(event);
+    int bits = pbmap;
+    uint8_t* rowBytes = bytes;
+    for (int i=0; i < 5; i++) {
+        rowBytes[0] = (bits & (0x01 << 4));
+        rowBytes[1] = (bits & (0x01 << 3));
+        rowBytes[2] = (bits & (0x01 << 2));
+        rowBytes[3] = (bits & (0x01 << 1));
+        rowBytes[4] = (bits & (0x01 << 0));
+        rowBytes += width;
+        bits = bits >> 5;
+    }
+    return 0;
 }
-void TeakTaskManager::MBEventB(MicroBitEvent event)
-{
-  m_currentTask->MB_Event(event);
-}
-void TeakTaskManager::MBEventAB(MicroBitEvent event)
-{
-  m_currentTask->MB_Event(event);
-}
-void TeakTaskManager::Tick()
-{
-  m_frameState = m_currentTask->Tick(m_frameState);
-}
+
+#if 0
+// Just for reference
+#define MICROBIT_BUTTON_EVT_DOWN                1
+#define MICROBIT_BUTTON_EVT_UP                  2
+#define MICROBIT_BUTTON_EVT_CLICK               3
+#define MICROBIT_BUTTON_EVT_LONG_CLICK          4
+#define MICROBIT_BUTTON_EVT_HOLD                5
+#define MICROBIT_BUTTON_EVT_DOUBLE_CLICK        6
+
+#define MICROBIT_BUTTON_LONG_CLICK_TIME         1000
+#define MICROBIT_BUTTON_HOLD_TIME               1500
+
+#define MICROBIT_BUTTON_STATE                   1
+#define MICROBIT_BUTTON_STATE_HOLD_TRIGGERED    2
+#define MICROBIT_BUTTON_STATE_CLICK             4
+#define MICROBIT_BUTTON_STATE_LONG_CLICK        8
+#endif
 
 //------------------------------------------------------------------------------
 // The initial task that starts when the BM boots.
 class BootTask : public TeakTask {
-  public:
-    virtual int Tick(int frame);
+public:
+    TaskId Event(MicroBitEvent event);
+private:
+    uint8_t m_frame;
 };
 
-char BootFilm [] {
-  // five bytes per frame
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
-  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  //-----------------------------
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  //-----------------------------
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
-  //-----------------------------
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-};
-
-int BootTask::Tick(int state) {
-  DisplayPackedBits(BootFilm + ((state % 4) * 5));
-  return state + 1;
-}
 BootTask gBootTask;
+
+const int bootImages[] __attribute__ ((aligned(4))) = {
+  PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(4)),
+  PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 1, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(4)),
+  PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(1, 1, 0, 1, 1),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(4)),
+  PBMAP(
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_FRAME_COUNT(4)),
+  PBMAP(
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_FRAME_COUNT(4)),
+    0 // End of film strip
+  };
+
+TaskId BootTask::Event(MicroBitEvent event)
+{
+    if (event.source == MICROBIT_ID_TIMER) {
+      m_image = bootImages[m_frame];
+      m_frame++;
+    }
+
+    return m_frame < 5 ? kSameTask : kTopMenuTask;
+}
 
 //------------------------------------------------------------------------------
 // A mini task for scrolling from one item to another.
-class MenuScrollTask : public TeakTask {
-  public:
-    virtual int Tick(int frame);
+class ScrollTask : public TeakTask {
+public:
+    TaskId Setup(TaskId current, bool toLeft);
+    TaskId Event(MicroBitEvent event);
+public:
+    TaskId  m_next;
+    uint8_t m_step;
+    uint8_t m_toLeft;
 };
-MenuScrollTask gScrollTask;
+ScrollTask gScrollTask;
+
+TaskId ScrollTask::Setup(TaskId current, bool toLeft)
+{
+    m_image = gTasks[current]->PackedImage();
+    if (toLeft) {
+        if (current >= kLastInRing) {
+            m_next = kFirstInRing;
+        } else {
+            m_next = (TaskId) (current + 1);
+        }
+    } else {
+        if (current <= kFirstInRing) {
+          m_next = kLastInRing;
+        } else {
+          m_next = (TaskId) (current - 1);
+        }
+    }
+    m_step = 0;
+    m_toLeft = toLeft;
+    return m_next;
+}
+
+TaskId ScrollTask::Event(MicroBitEvent event)
+{
+    if (event.source != MICROBIT_ID_TIMER)
+        return kSameTask;
+
+//    int imageFrom = gTasks[m_from]->PackedImage();
+    int imageTo = gTasks[m_next]->PackedImage();
+
+    int leftMask = PBMAP(
+        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 0),
+        0);
+
+    int rightMask = PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
+        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
+        PBMAP_ROW(0, 0, 0, 0, 1),
+        0);
+
+    // In each frame slide From and replace right/left edge with
+    // bits from To frame.
+    if (m_toLeft) {
+        m_image = (m_image << 1) & ~rightMask;
+        if (m_step>0) {
+            m_image = m_image | ((imageTo >> (5-m_step)) & rightMask);
+        }
+    } else {
+        m_image = (m_image >> 1) & ~leftMask;
+        if (m_step>0) {
+            m_image = m_image | ((imageTo << (5-m_step)) & leftMask);
+        }
+    }
+
+    // Advance the animation frame
+    m_step++;
+
+    return (m_step < 5) ? kSameTask : kTopMenuTask ;
+}
+
+//------------------------------------------------------------------------------
+class TopMenuTask : public TeakTask {
+public:
+    TopMenuTask();
+    TaskId Event(MicroBitEvent event);
+    TeakTask* ActiveTask() { return gTasks[m_activeTask]; }
+public:
+    TaskId m_activeTask;
+};
+TopMenuTask gTopMenuTask;
+
+TopMenuTask::TopMenuTask()
+{
+    m_activeTask = kFirstInRing;
+    m_image = ActiveTask()->PackedImage();
+}
+
+TaskId TopMenuTask::Event(MicroBitEvent event)
+{
+    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        if (event.source == MICROBIT_ID_BUTTON_A) {
+            m_activeTask = gScrollTask.Setup(m_activeTask, true);
+            return kScrollTask;
+        } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            m_activeTask = gScrollTask.Setup(m_activeTask, false);
+            return kScrollTask;
+        }
+    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        if (event.source == MICROBIT_ID_BUTTON_AB) {
+            // activeate the advanced mode for the task.
+            uBit.display.print('H');
+        }
+    } else if (event.source == MICROBIT_ID_TIMER) {
+      //  ActiveTask()->Event(event);
+        m_image = ActiveTask()->PackedImage();
+    }
+    // else if timer then send it to highlighte task
+    return kSameTask;
+}
 
 //------------------------------------------------------------------------------
 // A task for direct control of the motors
 class MotorTask : public TeakTask {
-  public:
-    virtual int Tick(int frame);
-//  virtual void Activate();
-//  virtual void MB_Event(MicroBitEvent mbEvt);
+public:
+    MotorTask();
+    TaskId Event(MicroBitEvent event);
 };
 MotorTask gMotorTask;
+
+MotorTask::MotorTask()
+{
+    m_image =  PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 1, 0, 1, 0),
+        PBMAP_ROW(1, 1, 1, 1, 1),
+        PBMAP_ROW(0, 1, 0, 1, 0),
+        PBMAP_FRAME_COUNT(1));
+}
+
+TaskId MotorTask::Event(MicroBitEvent event)
+{
+    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        if (event.source == MICROBIT_ID_BUTTON_A) {
+            uBit.display.print('A');
+        } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            uBit.display.print('B');
+        }
+    }
+    return kSameTask;
+}
 
 //------------------------------------------------------------------------------
 // A task for running the users saved program.
 // Perhaps there are 2 or 3 programs
 class UserProgramTask : public TeakTask {
-//  virtual void Show(int frame);
-//  virtual void Activate();
-//  virtual void MB_Event(MicroBitEvent mbEvt);
+public:
+    UserProgramTask();
 };
 UserProgramTask gUserProgramTask;
+
+UserProgramTask::UserProgramTask()
+{
+    m_image = PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 1),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_FRAME_COUNT(1));
+}
+
+//------------------------------------------------------------------------------
+// A task for running the users saved program.
+// Perhaps there are 2 or 3 programs
+class BlueToothTask : public TeakTask {
+public:
+    BlueToothTask();
+};
+BlueToothTask gBlueToothTask;
+
+BlueToothTask::BlueToothTask()
+{
+    m_image = PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_FRAME_COUNT(1));
+}
 
 //------------------------------------------------------------------------------
 // A teask to use the built-in level (accelerometer)
 class LevelTask  : public TeakTask {
-//  virtual void Show(int frame) = 0;
-//  virtual void Activate() = 0;
-//  virtual void MB_Event(MicroBitEvent mbEvt) = 0;
+public:
+    LevelTask();
 };
 LevelTask gLevelTask;
+
+LevelTask::LevelTask()
+{
+    m_image = PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 1, 0, 1, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_FRAME_COUNT(1));
+}
 
 //------------------------------------------------------------------------------
 // A teask to use the built-in temp
 class TempTask  : public TeakTask {
-//  virtual void Show(int frame) = 0;
-//  virtual void Activate() = 0;
-//  virtual void MB_Event(MicroBitEvent mbEvt) = 0;
+public:
+    TempTask();
 };
 TempTask gTempTask;
 
-int MenuScrollTask::Tick(int frame) {
-  if (frame < 5) {
-    return frame + 1;
-    // Merge the image for previous and next module
-  } else {
-    // Switch to the next module.
-    return 0;
-  }
-
-}
-
-char MBMotorModeGlyph [] {
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 0, 0, 0, 0),
-  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
-  PACK_DISPLAY_BITS(1, 1, 1, 1, 1),
-  PACK_DISPLAY_BITS(0, 1, 0, 1, 0),
-};
-
-int MotorTask::Tick(int frame)
+TempTask::TempTask()
 {
-    if (frame == 0) {
-      //ShowImage(MBMotorModeGlyph);
-    }
-    return frame + 1;
+    m_image = PBMAP(
+        PBMAP_ROW(0, 1, 1, 1, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_FRAME_COUNT(1));
 }
-
-/*
-  if (evt.value == MICROBIT_BUTTON_EVT_HOLD) {
-    bAdvertising = !bAdvertising;
-    setAdvertising(bAdvertising);
-  }
-*/
-
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
 
-TeakTask* TeakTaskManager::m_currentTask = &gBootTask;
-int TeakTaskManager::m_frameState = 0;
+TeakTask *gTasks[] = {
+    (TeakTask*) NULL,
+    &gBootTask,
+    &gTopMenuTask,
+    &gScrollTask,
+    &gMotorTask,
+    &gUserProgramTask,
+    &gBlueToothTask,
+    &gLevelTask,
+    &gTempTask
+};

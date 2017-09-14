@@ -33,118 +33,16 @@ void ServoMessage(int period, int servo);
 void ServoStop();
 void stopAll();
 
+// Could the code tap into the lower layer, and look for complete expression
+// that would be better. It will be helpful to have sctatter string support.
+ManagedString eom(";");
+
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
 
 #include "TrashbotsController.h"
 
-// Could the code tap into the lower layer, and look for complete expression
-// that would be better. It will be helpful to have sctatter string support.
-ManagedString eom(";");
-
-SPI spi(MOSI, MISO, SCK);
-
-void SetMotoPower(int motor, int power);
-
-void SetMotoPower(int motor, int power)
-{
-  if (motor < 1 || motor > 2)
-    return;
-
-  uBit.io.P16.setDigitalValue(0);
-  if (motor == 1) {
-    spi.write(0x80 | MOTOR_Set1);
-  } else {
-    spi.write(0x80 | MOTOR_Set2);
-  }
-  spi.write((power & 0x0000FF00) >> 8);
-  spi.write((power & 0x000000FF));
-  spi.write(0x00); // Zero means run indefinitely
-  spi.write(0x00); // Zero means run indefinitely
-  uBit.io.P16.setDigitalValue(1);
-}
-
-class PWMServoMotor {
-public:
-  PWMServoMotor(int servo);
-  static int g_powerMap[];
-  int currentPower;
-  void Enable(bool enabled);
-  void SetPower(int power,int servo);
-  void BumpPower();
-  int m_enabled;
-  int m_delta;
-  int m_servo;
-  int m_power;
-};
-
-//int PWMServoMotor::g_powerMap [] = { 60, 69, 75, 85, 98, 105, 115 };
-int PWMServoMotor::g_powerMap [] = { 1500, 1200, 1100, 1500, 1200, 1100, 1500 };
-
-void PWMServoMotor::Enable(bool enabled) {
-  m_enabled = enabled;
-  if (enabled) {
-//    SetPower(m_power);
-  } else {
-//    SetPower(3);
-  }
-}
-
-PWMServoMotor::PWMServoMotor(int servo) {
-  m_servo = servo;
-  m_delta = 1;
-  m_power = 3;
-  m_enabled = true;
-//  SetPower(m_power);
-}
-
-void PWMServoMotor::BumpPower() {
-  m_power += m_delta;
-  if (m_power > 6) {
-    m_power = 5;
-    m_delta = -1;
-  } else if (m_power < 0) {
-    m_power = 1;
-    m_delta = 1;
-  }
-  //SetPower(m_power);
-}
-
-int g_servoPWMArray[] = {
-  1310,1370,1380,1390,1395,1400,1405,1410,1415,1420,
-  1450,
-  1490,1500,1505,1510,1515,1520,1525,1535,1555,1590
-};
-
-void PWMServoMotor::SetPower(int power, int servo) {
-  // Convert +/- 100% value to 0-20 index
-  int index = power/10;
-  index += 10;
-  if (index < 0) {
-     index = 0;
-  } else if (index > 20) {
-    index = 20;
-  }
-
-  int uSecPeriod = g_servoPWMArray[index];
-//  uBit.display.print(uSecPeriod);
-  ServoMessage(uSecPeriod, servo);
-  /*
-  if (m_servo == 0) {
-    uBit.io.P0.setServoValue(pwm);
-  } else if (m_servo == 1) {
-    uBit.io.P1.setServoValue(pwm);
-  } else if (m_servo == 2) {
-    uBit.io.P2.setServoValue(pwm);
-  }
-  */
-}
-
 int connected = 0;
-
-PWMServoMotor s0(0);
-PWMServoMotor s1(1);
-PWMServoMotor s2(2);
 
 void onConnected(MicroBitEvent)
 {
@@ -172,117 +70,6 @@ int hexCharToInt(char c) {
   return 0;
 }
 
-
-void ReadTBCSystemStatus() {
-  //char send[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  char reply[8];
-  uBit.io.P16.setDigitalValue(0);
-#if 1
-  // spi.write(0x80 | SYS_Status);
-  spi.write(SYS_Status);  // Read class
-  reply[0] = spi.write(0); //HW
-  reply[1] = spi.write(1); //FW Y
-  reply[2] = spi.write(2); //FW M
-  reply[3] = spi.write(3); //FW D
-  reply[4] = spi.write(4); // Self test 1
-  reply[5] = spi.write(5); // Self test 2
-  reply[6] = spi.write(6); // TBD
-  reply[7] = spi.write(7); // TBD
-#else
-  spi.write (send, 8, reply, 8);
-#endif
-
-uBit.io.P16.setDigitalValue(1);
-uBit.display.scroll((int)reply[4]);
-//uBit.display.scroll(reply[2]);
-
-/*
-SpiMem_Write(SYS_Status, SYS_Status_HW_Rev_Num, 1); 0
-SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Year, 17); 1
-SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Month, 8); 2
-SpiMem_Write(SYS_Status, SYS_Status_FW_Rev_Date, 42); 3
-SpiMem_Write(SYS_Status, SYS_Status_FW_Self_Test1, 35); 4
-SpiMem_Write(SYS_Status, SYS_Status_FW_Self_Test2, 36); 5
-*/
-
-}
-
-
-void ServoStop() {
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(0x80 | SERVO_Run);
-  spi.write(0x00);    // turn off all servos
-  //fiber_sleep(100);
-  uBit.io.P16.setDigitalValue(1);
-  //fiber_sleep(100);
-}
-
-/*void ServoOff(int period, int servo) {
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(0x80 | SERVO_Run);
-  spi.write(0x00);
-  uBit.io.P16.setDigitalValue(1);
-}
-*/
-
-void ServoMessage(int period, int servo) {
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(0x80 | SERVO_Run);
-  spi.write(0x07);
-  //fiber_sleep(100);
-
-  if (servo == 1) {
-    spi.write(0x80 | SERVO_Set1);
-    spi.write((period & 0x7f00) >> 8);
-    spi.write((period & 0xff));
-    spi.write(0x00);
-    spi.write(0x00);
-    //fiber_sleep(100);
-  } else if (servo == 2) {
-    spi.write(0x80 | SERVO_Set2);
-    spi.write((period & 0x7f00) >> 8);
-    spi.write((period & 0x00ff));
-    spi.write(0x00);
-    spi.write(0x00);
-    //fiber_sleep(100);
-  }
-//  spi.write(0x80 | SERVO_Run);
-//  spi.write(0x07);
-  uBit.io.P16.setDigitalValue(1);
-  //fiber_sleep(100);
-}
-
-void PlayNote(int note, int octave) {
-  // set chip enable
-  if (note > 6 || note < 0) {
-    note = 0;
-  }
-  if (octave > 8 || octave < 0) {
-    octave = 4;
-  }
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(0x80 | BEEP_PlayNote);
-  spi.write((note << 4) | octave);
-  uBit.io.P16.setDigitalValue(1);
-  //fiber_sleep(100);
-
-/*
-  // Set note
-  fiber_sleep(50);
-  spi.write(0x80 | BEEP_Note0);
-  spi.write(frequency >> 8);
-  spi.write(frequency & 0xFF);
-  spi.write(duration >> 8);
-  spi.write(duration & 0xFF);
-  fiber_sleep(100);
-
-  // Play note
-  spi.write(0x80 | BEEP_Play);
-  spi.write(0);
-  spi.write(0);
-
-  */
-}
 
 MicroBitImage image(5,5);
 int j = 0;
@@ -359,14 +146,6 @@ void onData(MicroBitEvent)
   s->decr();
 }
 
-void stopAll()
-{
-  SetMotoPower(1, 0);
-  fiber_sleep(100);
-  SetMotoPower(2, 0);
-  uBit.display.clear();
-}
-
 int servoValueA = 75;
 int servoValueB = 70;
 
@@ -425,6 +204,7 @@ void onABEvent(MicroBitEvent evt)
   }
 }
 
+
 int main()
 {
   #if  1
@@ -444,9 +224,9 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
 
 #if 0
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, TeakTaskManager::MBEventA);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, TeakTaskManager::MBEventB);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, TeakTaskManager::MBEventAB);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
 #else
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
@@ -454,11 +234,11 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
 #endif
 
+    uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
+    uart->eventOn(eom, ASYNC);
+
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
-    uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
-    //uBit.display.scroll("");
-    uart->eventOn(eom, ASYNC);
 
     accelerometer.setRange(4);
 //    int p = accelerometer.getPeriod();
@@ -473,9 +253,11 @@ int main()
   //  char c = 0;
 
     // Run the main loop
+    MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
+
     while(1) {
         fiber_sleep(100);
-        TeakTaskManager::Tick();
+        gTaskManager.Event(tick);
       }
 
     //    release_fiber();

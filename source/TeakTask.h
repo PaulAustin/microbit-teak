@@ -20,29 +20,59 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
-// A macro that make sit easy to make a small packed bitmaps
-// for the 5x5 display while leaving it 'possible' to read the
-// pattern instead of hex digits.
-#define PACK_DISPLAY_BITS(_b1, _b2, _b3, _b4, _b5) \
-  ((_b1<<7) | (_b2<<6) | (_b3<<5) | (_b4<<4) | (_b5<<3))
 
-class TeakTask;
+// Packed Bitmap - a 5x5 micor:bit bit map packed into an int32
+// the fraem count is used in some context to indicate how many
+// times to repeat that frame.
+//
+//  0|-fc|--row5--|--row4--|--row3--|--row2--|--row2--|
 
-// TeakMenu - routs events to the appropriate module
-class TeakTaskManager {
-  public:
-    static void SetTask(TeakTask* pTask);
-    static void MBEventA(MicroBitEvent mbEvt);
-    static void MBEventB(MicroBitEvent mbEvt);
-    static void MBEventAB(MicroBitEvent mbEvt);
-    static void Tick();
-  private:
-    static TeakTask* m_currentTask;
-    static int       m_frameState;
+#define PBMAP_ROW(_b1, _b2, _b3, _b4, _b5) \
+  (((_b1 & 1)<<4) | ((_b2&1)<<3) | ((_b3&1)<<2) | ((_b4&1)<<1) | ((_b5&1)<<0))
+
+#define PBMAP_FRAME_COUNT(_fc)   (_fc & 0x1F)
+
+#define PBMAP(_r1, _r2, _r3, _r4, _r5, frameCount) \
+  (_r1 | (_r2<<5) | (_r3<<10) | (_r4<<15) | (_r5<<20) | (frameCount<<25))
+
+inline int PBmapFrameCount(int pbmap) { return pbmap & 0x1F >> 25;}
+int PBmapUnpack(int pbmap, uint8_t* bits, int width);
+
+// Adding a new event source
+#define MICROBIT_ID_TIMER 512
+
+// Case # 21-05-398
+
+// This order must match the array initializer at the end of TeakTasks.cpp
+enum TaskId : uint8_t {
+    kSameTask = 0,
+    kBootTask,
+    kTopMenuTask,
+    kScrollTask,
+    kFirstInRing, kMotorTask = kFirstInRing,
+    kUserProgramTask,
+    kBlueToothTask,
+    kLevelTask,
+    kTempTask,  kLastInRing = kTempTask
 };
 
 class TeakTask {
-  public:
-    virtual int Tick(int state) { return state; };
-    virtual void MB_Event(MicroBitEvent) {};
+public:
+    int m_image;
+public:
+    int PackedImage() { return m_image; };
+    virtual TaskId Event(MicroBitEvent) { return kSameTask; };
 };
+extern TeakTask* gTasks[];
+
+// TeakMenu - routs events to the appropriate module
+class TeakTaskManager {
+public:
+    TeakTaskManager();
+    void Event(MicroBitEvent event);
+    TeakTask* CurrentTask() { return gTasks[m_currentTask]; };
+private:
+    int m_currentImage = 0;
+    TaskId m_currentTask;
+};
+extern TeakTaskManager gTaskManager;
