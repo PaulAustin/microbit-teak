@@ -228,9 +228,11 @@ int main()
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
 
 #if 0
+
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
+    uBit.messageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
 #else
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);

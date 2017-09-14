@@ -35,7 +35,7 @@ DEALINGS IN THE SOFTWARE.
 #define PBMAP(_r1, _r2, _r3, _r4, _r5, frameCount) \
   (_r1 | (_r2<<5) | (_r3<<10) | (_r4<<15) | (_r5<<20) | (frameCount<<25))
 
-inline int PBmapFrameCount(int pbmap) { return pbmap & 0x1F >> 25;}
+inline int PBmapFrameCount(int pbmap) { return (pbmap & (0x1F << 25)) >> 25;}
 int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 
 // Adding a new event source

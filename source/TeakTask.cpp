@@ -103,9 +103,18 @@ int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 // The initial task that starts when the BM boots.
 class BootTask : public TeakTask {
 public:
+    BootTask();
     TaskId Event(MicroBitEvent event);
 private:
     uint8_t m_frame;
+    uint8_t m_delay;
+    uint8_t m_booting;
+    enum {
+      kBootDone = 0,
+      kSplashAnimation,
+      kSplashDone,
+      kBotNameScrolling,
+    };
 };
 
 BootTask gBootTask;
@@ -124,39 +133,89 @@ const int bootImages[] __attribute__ ((aligned(4))) = {
     PBMAP_ROW(0, 1, 1, 1, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(4)),
+    PBMAP_FRAME_COUNT(3)),
   PBMAP(
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 0, 1, 0, 0),
     PBMAP_ROW(1, 1, 0, 1, 1),
     PBMAP_ROW(0, 0, 1, 0, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(4)),
+    PBMAP_FRAME_COUNT(3)),
   PBMAP(
     PBMAP_ROW(0, 0, 1, 0, 0),
     PBMAP_ROW(0, 1, 0, 1, 0),
     PBMAP_ROW(1, 0, 0, 0, 1),
     PBMAP_ROW(0, 1, 0, 1, 0),
     PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_FRAME_COUNT(4)),
+    PBMAP_FRAME_COUNT(2)),
   PBMAP(
     PBMAP_ROW(0, 1, 0, 1, 0),
     PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(1, 0, 0, 0, 1),
     PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_FRAME_COUNT(4)),
+    PBMAP_FRAME_COUNT(2)),
+  PBMAP(
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_FRAME_COUNT(1)),
+  PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(6)),
     0 // End of film strip
   };
+
+BootTask::BootTask()
+{
+    m_frame = 0;
+    m_delay = PBmapFrameCount(bootImages[m_frame]);
+    m_booting = kSplashAnimation;
+}
 
 TaskId BootTask::Event(MicroBitEvent event)
 {
     if (event.source == MICROBIT_ID_TIMER) {
-      m_image = bootImages[m_frame];
-      m_frame++;
+        if (m_booting == kSplashAnimation) {
+            // Truw while the filem is playing.
+            m_image = bootImages[m_frame];
+            m_delay--;
+            if (m_delay<=0) {
+                // Bump to next frame, and reset delay
+                m_frame++;
+                m_delay = PBmapFrameCount(bootImages[m_frame]);
+            }
+            if (m_delay == 0) {
+                m_booting = kSplashDone;
+            }
+        }
+        if (m_booting == kSplashDone) {
+            // At end of launch picture, show name
+            char* name = microbit_friendly_name();
+            // Change to all caps in place, crazy stuff.
+            char* upperName = name;
+            for (int i = strlen(name); i ; i--) {
+               *upperName = toupper(*upperName);
+               upperName++;
+            }
+            // Scolling is done in background of
+            // of the main loop.
+            uBit.display.printAsync(name);
+            m_booting = kBotNameScrolling;
+        }
+    } else if (event.source == MICROBIT_ID_DISPLAY) {
+        // MICROBIT_DISPLAY_EVT_FREE is fired once the name
+        // has scrolled by.
+        m_booting = kBootDone;
     }
 
-    return m_frame < 5 ? kSameTask : kTopMenuTask;
+    return (m_booting != kBootDone) ? kSameTask : kTopMenuTask;
 }
 
 //------------------------------------------------------------------------------
