@@ -136,6 +136,13 @@ const int bootImages[] __attribute__ ((aligned(4))) = {
     PBMAP_FRAME_COUNT(3)),
   PBMAP(
     PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(3)),
+  PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 0, 1, 0, 0),
     PBMAP_ROW(1, 1, 0, 1, 1),
     PBMAP_ROW(0, 0, 1, 0, 0),
@@ -161,7 +168,7 @@ const int bootImages[] __attribute__ ((aligned(4))) = {
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_FRAME_COUNT(1)),
+    PBMAP_FRAME_COUNT(2)),
   PBMAP(
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
@@ -322,7 +329,8 @@ TaskId TopMenuTask::Event(MicroBitEvent event)
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
         if (event.source == MICROBIT_ID_BUTTON_AB) {
             // activeate the advanced mode for the task.
-            uBit.display.print('H');
+            return m_activeTask;
+            // uBit.display.print('H');
         }
     } else if (event.source == MICROBIT_ID_TIMER) {
       //  ActiveTask()->Event(event);
@@ -341,25 +349,41 @@ public:
 };
 MotorTask gMotorTask;
 
+const int kMotoBase = PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(1, 0, 1, 0, 1),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(1));
+
+const int kMotorLeftForward  =  PBMAP(PBMAP_ROW(0, 1, 0, 0, 0), 0, 0, 0, 0, 0);
+const int kMotorRightForward =  PBMAP(PBMAP_ROW(0, 0, 0, 1, 0), 0, 0, 0, 0, 0);
+const int kMotorLeftBack     =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 1, 0, 0, 0), 0);
+const int kMotorRightBack    =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 0, 0, 1, 0), 0);
+
 MotorTask::MotorTask()
 {
-    m_image =  PBMAP(
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 1, 0, 1, 0),
-        PBMAP_ROW(1, 1, 1, 1, 1),
-        PBMAP_ROW(0, 1, 0, 1, 0),
-        PBMAP_FRAME_COUNT(1));
+    m_image = kMotoBase;
 }
 
 TaskId MotorTask::Event(MicroBitEvent event)
 {
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        m_image = kMotoBase;
         if (event.source == MICROBIT_ID_BUTTON_A) {
-            uBit.display.print('A');
+            m_image |= kMotorLeftForward;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            uBit.display.print('B');
+            m_image |= kMotorRightForward;
+        } else if (event.source == MICROBIT_ID_BUTTON_AB) {
+            m_image |= kMotorLeftForward;
+            m_image |= kMotorRightForward;
         }
+    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
+        event.source == MICROBIT_ID_BUTTON_AB) {
+        return kTopMenuTask;
+    } else {
+        m_image = kMotoBase;
     }
     return kSameTask;
 }
