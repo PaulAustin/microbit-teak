@@ -213,7 +213,7 @@ TaskId BootTask::Event(MicroBitEvent event)
             }
             // Scolling is done in background of
             // of the main loop.
-            uBit.display.printAsync(name);
+            uBit.display.scrollAsync(name);
             m_booting = kBotNameScrolling;
         }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
@@ -414,20 +414,30 @@ UserProgramTask::UserProgramTask()
 class BlueToothTask : public TeakTask {
 public:
     BlueToothTask();
+    TaskId Event(MicroBitEvent event);
 };
 BlueToothTask gBlueToothTask;
 
 BlueToothTask::BlueToothTask()
 {
     m_image = PBMAP(
-        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(1, 1, 1, 1, 1),
+        PBMAP_ROW(0, 1, 0, 1, 0),
         PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
         PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 1, 0, 0),
         PBMAP_FRAME_COUNT(1));
 }
 
+TaskId BlueToothTask::Event(MicroBitEvent event)
+{
+  if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
+      event.source == MICROBIT_ID_BUTTON_AB) {
+      return kTopMenuTask;
+  } else {
+      return kSameTask;
+  } 
+}
 //------------------------------------------------------------------------------
 // A teask to use the built-in level (accelerometer)
 class LevelTask  : public TeakTask {
