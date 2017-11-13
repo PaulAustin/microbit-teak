@@ -76,3 +76,6 @@ private:
     TaskId m_currentTask;
 };
 extern TeakTaskManager gTaskManager;
+
+extern MicroBitUARTServiceFixed *uart;
+void setAdvertising(bool state);

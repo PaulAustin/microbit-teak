@@ -21,6 +21,7 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include <MicroBit.h>
+#include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 
 extern MicroBit uBit;
@@ -37,23 +38,58 @@ in n/2 button taps.
 2. P1, P2  - user programs
 3. Status  - low level daignostics TBD
 4. Pairing mode.
-
 */
 
 // Images are unpacked or merged in one buffer before
 // being transfered to the main display.
 extern TeakTask *gTasks[];
 TeakTaskManager gTaskManager;
+bool hackConnected = false;
+const int pm_connect = PBMAP(
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 1, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_FRAME_COUNT(1));
+
+const int pm_disconnect = PBMAP(
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_FRAME_COUNT(1));
+
+TaskId CheckBLEEvents(MicroBitEvent event);
 
 TeakTaskManager::TeakTaskManager()
 {
-    // Start whth the boot task.
+    // Start wth the boot task.
     m_currentTask = kBootTask;
 }
 
 void TeakTaskManager::Event(MicroBitEvent event)
 {
+
+    TaskId next = CheckBLEEvents(event);
+    if (next != kSameTask) {
+      return;
+    }
+    // If connected then ignore local menu system.
+    if (hackConnected)
+     return;
+
+     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+         if (event.source == MICROBIT_ID_BUTTON_A) {
+           uart->send(ManagedString("(button-down(a))"));
+         } else if (event.source == MICROBIT_ID_BUTTON_B) {
+           uart->send(ManagedString("(button-down(b))"));
+         }
+     }
+
     TaskId nextTask = CurrentTask()->Event(event);
+
 
     int newImage = CurrentTask()->PackedImage();
     if (newImage != m_currentImage)  {
@@ -359,6 +395,9 @@ TaskId TopMenuTask::HighlightLine()
 
 TaskId TopMenuTask::Event(MicroBitEvent event)
 {
+    // Watch for events that are managed independent of state.
+
+    // process events that are specific to state.
     switch(m_state) {
     case kTopMenuSwipeIn:
     case kTopMenuSwipeOut:
@@ -370,10 +409,10 @@ TaskId TopMenuTask::Event(MicroBitEvent event)
         if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
             m_state = kTopMenuBrowse;
             if (event.source == MICROBIT_ID_BUTTON_A) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, true);
+                m_activeTask = gScrollTask.Setup(m_activeTask, false);
                 return kScrollTask;
             } else if (event.source == MICROBIT_ID_BUTTON_B) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, false);
+                m_activeTask = gScrollTask.Setup(m_activeTask, true);
                 return kScrollTask;
             }
         } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
@@ -431,8 +470,11 @@ TaskId MotorTask::Event(MicroBitEvent event)
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
         event.source == MICROBIT_ID_BUTTON_AB) {
         return kTopMenuTask;
-    } else {
+    } else if (event.source == MICROBIT_ID_TIMER) {
         m_image = kMotoBase;
+        if (event.value & 0x08) {
+          m_image &= ~(0x04 << 10);
+        }
     }
     return kSameTask;
 }
@@ -449,46 +491,61 @@ UserProgramTask gUserProgramTask;
 UserProgramTask::UserProgramTask()
 {
     m_image = PBMAP(
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
         PBMAP_ROW(1, 0, 0, 0, 1),
-        PBMAP_ROW(0, 0, 1, 0, 0),
         PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(0, 0, 0, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 1),
         PBMAP_FRAME_COUNT(1));
 }
 
 //------------------------------------------------------------------------------
-// A task for running the users saved program.
-// Perhaps there are 2 or 3 programs
+// Turn on bluetooth advertising.
 class BlueToothTask : public TeakTask {
 public:
     BlueToothTask();
+    bool m_advertising;
     TaskId Event(MicroBitEvent event);
 };
 BlueToothTask gBlueToothTask;
 
+const int kBluetootBaseImage = PBMAP(
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_FRAME_COUNT(1));
+
 BlueToothTask::BlueToothTask()
 {
-    m_image = PBMAP(
-        PBMAP_ROW(1, 1, 1, 1, 1),
-        PBMAP_ROW(0, 1, 0, 1, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_FRAME_COUNT(1));
+    m_image = kBluetootBaseImage;
 }
 
 TaskId BlueToothTask::Event(MicroBitEvent event)
 {
-  if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-      event.source == MICROBIT_ID_BUTTON_AB) {
-      return kTopMenuTask;
-  } else {
-      return kSameTask;
-  }
+    if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
+        event.source == MICROBIT_ID_BUTTON_AB) {
+        // Turn off the beacon
+        m_advertising = false;
+        setAdvertising(m_advertising);
+        return kTopMenuTask;
+    } else if (event.source == MICROBIT_ID_TIMER) {
+        if (!m_advertising) {
+            m_advertising = true;
+            setAdvertising(m_advertising);
+        }
+        m_image = kBluetootBaseImage;
+        if (event.value & 0x08) {
+          m_image &= ~(0x04 << 10);
+        }
+        // Once connected to it can pop back to the top menu.
+    }
+    return kSameTask;
 }
+
 //------------------------------------------------------------------------------
-// A teask to use the built-in level (accelerometer)
+// A task to use the built-in level (accelerometer)
 class LevelTask  : public TeakTask {
 public:
     LevelTask();
@@ -524,10 +581,30 @@ TempTask::TempTask()
         PBMAP_ROW(0, 0, 0, 0, 0),
         PBMAP_FRAME_COUNT(1));
 }
+
+//------------------------------------------------------------------------------
+TaskId CheckBLEEvents(MicroBitEvent event)
+{
+    // Watch for events that are managed independent of state.
+    if (event.source == MICROBIT_ID_BLE) {
+        if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
+            hackConnected = true;
+            gUserProgramTask.m_image = pm_connect;
+            uBit.display.print('C');
+            return kUserProgramTask;
+        } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
+            hackConnected = false;
+            gUserProgramTask.m_image = pm_disconnect;
+            uBit.display.print('D');
+            return kBlueToothTask;
+        }
+    }
+    return kSameTask;
+};
+
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
-
 TeakTask *gTasks[] = {
     (TeakTask*) NULL,
     &gBootTask,
@@ -539,3 +616,18 @@ TeakTask *gTasks[] = {
     &gLevelTask,
     &gTempTask
 };
+
+//------------------------------------------------------------------------------
+void setAdvertising(bool state)
+{
+  if (state) {
+//    uBit.display.print(beaconOn);
+    uBit.bleManager.setTransmitPower(6);
+    uBit.bleManager.ble->setAdvertisingInterval(200);
+    uBit.bleManager.ble->gap().setAdvertisingTimeout(0);
+    uBit.bleManager.ble->gap().startAdvertising();
+  } else {
+//    uBit.display.print(beaconOff);
+    uBit.bleManager.stopAdvertising();
+  }
+}

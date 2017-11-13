@@ -39,21 +39,18 @@ MicroBitThermometer thermometer;
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
 
-int connected = 0;
-
-void onConnected(MicroBitEvent)
+void onConnected(MicroBitEvent event )
 {
-    uBit.display.scroll("C");
-    connected = 1;
+    uBit.display.print('C');
+    gTaskManager.Event(event);
     return;
-    // uart->putc('z', ASYNC);
-    // mobile app will send ASCII strings terminated with the colon character
 }
 
-void onDisconnected(MicroBitEvent)
+void onDisconnected(MicroBitEvent event)
 {
-    uBit.display.scroll("D");
-    connected = 0;
+    uBit.display.print('D');
+    gTaskManager.Event(event);
+    return;
 }
 
 int hexCharToInt(char c) {
@@ -146,6 +143,7 @@ void onData(MicroBitEvent)
 int servoValueA = 75;
 int servoValueB = 70;
 
+/*
 void onButtonA(MicroBitEvent)
 {
   uBit.display.print('a');
@@ -156,9 +154,6 @@ void onButtonA(MicroBitEvent)
   //uBit.display.print('s');
   //s0.SetPower(50,1);
 
-  if (connected == 0) {
-      return;
-  }
   uart->send(ManagedString("(button-down(a))"));
 }
 
@@ -167,9 +162,6 @@ void onButtonB(MicroBitEvent)
   uBit.display.print('b');
   stopAll();
 
-  if (connected == 0) {
-      return;
-  }
   char str[80];
   sprintf(str, "(accel(%i))", accelerometer.getX()); //
   uart->send(ManagedString(str));
@@ -179,35 +171,7 @@ void onButtonB(MicroBitEvent)
   uart->send(ManagedString(str2));
   //  uart->send(ManagedString("(button-down(b))"));
 }
-
-bool bAdvertising = false;
-void setAdvertising(bool state);
-
-MicroBitImage beaconOff("0,0,0,0,0\n0,0,0,0,0\n0,0,255,0,0\n0,0,0,0,0\n0,0,0,0,0\n");
-MicroBitImage beaconOn("0,255,255,255, 0\n255,0,0,0,255\n255,0,255,0,255\n255,0,0,0,255\n0,255,255,255,0\n");
-
-void setAdvertising(bool state)
-{
-  if (state) {
-    uBit.display.print(beaconOn);
-    uBit.bleManager.setTransmitPower(6);
-    uBit.bleManager.ble->setAdvertisingInterval(200);
-    uBit.bleManager.ble->gap().setAdvertisingTimeout(0);
-    uBit.bleManager.ble->gap().startAdvertising();
-  } else {
-    uBit.display.print(beaconOff);
-    uBit.bleManager.stopAdvertising();
-  }
-}
-
-void onABEvent(MicroBitEvent evt)
-{
-  if (evt.value == MICROBIT_BUTTON_EVT_HOLD) {
-    bAdvertising = !bAdvertising;
-    setAdvertising(bAdvertising);
-  }
-}
-
+*/
 
 int main()
 {
@@ -216,29 +180,22 @@ int main()
     uBit.init();
 
     // Set to be initially off.
-    setAdvertising(bAdvertising);
+    // setAdvertising(bAdvertising);
 
     //uBit.io.P0.setDigitalValue(0);
     //uBit.io.P1.setDigitalValue(0);
     spi.format(8, 3);
     spi.frequency(1000000);
 
-    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_CONNECTED, onConnected);
-    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
+    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
+//    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
+    // End of packet detectd on incomming message
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
-
-#if 0
 
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
-#else
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_BUTTON_EVT_CLICK, onButtonA);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_BUTTON_EVT_CLICK, onButtonB);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_HOLD, onABEvent);
-    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_BUTTON_EVT_CLICK, onABEvent);
-#endif
 
     uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
     uart->eventOn(eom, ASYNC);
@@ -261,9 +218,12 @@ int main()
 
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
+    int tickCount = 0;
 
     while(1) {
+        tickCount++;
         fiber_sleep(100);
+        tick.value = tickCount;
         gTaskManager.Event(tick);
       }
 
