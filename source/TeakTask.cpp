@@ -71,22 +71,24 @@ TeakTaskManager::TeakTaskManager()
 
 void TeakTaskManager::Event(MicroBitEvent event)
 {
-
     TaskId next = CheckBLEEvents(event);
     if (next != kSameTask) {
       return;
     }
+
+    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+       if (event.source == MICROBIT_ID_BUTTON_A) {
+         uBit.display.print('A');
+         uart->send(ManagedString("(a)"));
+       } else if (event.source == MICROBIT_ID_BUTTON_B) {
+         uBit.display.print('B');
+         uart->send(ManagedString("(b)"));
+       }
+    }
+
     // If connected then ignore local menu system.
     if (hackConnected)
-     return;
-
-     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-         if (event.source == MICROBIT_ID_BUTTON_A) {
-           uart->send(ManagedString("(button-down(a))"));
-         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-           uart->send(ManagedString("(button-down(b))"));
-         }
-     }
+        return;
 
     TaskId nextTask = CurrentTask()->Event(event);
 

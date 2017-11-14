@@ -112,11 +112,13 @@ void onData(MicroBitEvent)
     } else if(strncmp(str, "1", 1) == 0) {
       if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
+        uBit.display.print("1");
         SetMotoPower(1, value);
       }
     } else if(strncmp(str, "2", 1) == 0) {
       if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
+        uBit.display.print("2");
         SetMotoPower(2, -value);
       }
     }
