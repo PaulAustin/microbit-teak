@@ -25,22 +25,45 @@ DEALINGS IN THE SOFTWARE.
 #include "TeakTask.h"
 #include "TrashbotsController.h"
 
-//#include "teak/source/tstring.h"
-//#include "teak/source/tnode.h"
-
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
 
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
 ManagedString eom(";");
-
-MicroBitThermometer thermometer;
-MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
 MicroBitUARTServiceFixed *uart;
+SPI spi(MOSI, MISO, SCK);
+
+void SetMotorPower(int motor, int power)
+{
+  if (motor < 1 || motor > 2)
+    return;
+
+  if (power > 100) {
+    power = 100;
+  } else if (power < -100) {
+    power = -100;
+  }
+
+  uBit.io.P1.setDigitalValue(0); // for scope.
+  uBit.io.P16.setDigitalValue(0);
+  if (motor == 1) {
+    spi.write(kRM_Motor1Power);
+  } else {
+    spi.write(kRM_Motor2Power);
+  }
+  if (power >= 0) {
+    spi.write(power);
+  } else {
+    spi.write(power);        
+  }
+  uBit.io.P16.setDigitalValue(1);
+  uBit.io.P1.setDigitalValue(1);
+}
 
 void onConnected(MicroBitEvent event )
 {
+    // Need to note this in a different way
     uBit.display.print('C');
     gTaskManager.Event(event);
     return;
@@ -48,6 +71,7 @@ void onConnected(MicroBitEvent event )
 
 void onDisconnected(MicroBitEvent event)
 {
+   // Need to note this in a different way
     uBit.display.print('D');
     gTaskManager.Event(event);
     return;
@@ -63,7 +87,6 @@ int hexCharToInt(char c) {
   }
   return 0;
 }
-
 
 MicroBitImage image(5,5);
 int j = 0;
@@ -106,23 +129,20 @@ void onData(MicroBitEvent)
     if(strncmp(str, "(1 2)", 5) == 0){
       if(strncmp(str + 6, "d", 1) == 0){
         value = atoi(str + 8);
-        SetMotoPower(1, value);
-        SetMotoPower(2, -value);
+        SetMotorPower(1, value);
+        SetMotorPower(2, -value);
       }
     } else if(strncmp(str, "1", 1) == 0) {
       if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
-        uBit.display.print("1");
-        SetMotoPower(1, value);
+        SetMotorPower(1, value);
       }
     } else if(strncmp(str, "2", 1) == 0) {
       if(strncmp(str + 2, "d", 1) == 0) {
         value = atoi(str + 4);
-        uBit.display.print("2");
-        SetMotoPower(2, -value);
+        SetMotorPower(2, -value);
       }
     }
-
 } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
     // Notes come in the form 'C4' note, octave
     str += 4;
@@ -142,58 +162,24 @@ void onData(MicroBitEvent)
   s->decr();
 }
 
-int servoValueA = 75;
-int servoValueB = 70;
-
-/*
-void onButtonA(MicroBitEvent)
-{
-  uBit.display.print('a');
-  SetMotoPower(1, 80);
-  fiber_sleep(10);
-
-  //ReadTBCSystemStatus();
-  //uBit.display.print('s');
-  //s0.SetPower(50,1);
-
-  uart->send(ManagedString("(button-down(a))"));
-}
-
-void onButtonB(MicroBitEvent)
-{
-  uBit.display.print('b');
-  stopAll();
-
-  char str[80];
-  sprintf(str, "(accel(%i))", accelerometer.getX()); //
-  uart->send(ManagedString(str));
-
-  char str2[80];
-  sprintf(str2, "(temp(%i))", thermometer.getTemperature()); //
-  uart->send(ManagedString(str2));
-  //  uart->send(ManagedString("(button-down(b))"));
-}
-*/
-
 int main()
 {
-  #if  1
     // Initialise the micro:bit runtime.
     uBit.init();
+
+    spi.format(8, 3);
+     spi.frequency(1000000);
+
+    //TBCInit();
+    //uBit.display.print('A');
 
     // Set to be initially off.
     // setAdvertising(bAdvertising);
 
-    //uBit.io.P0.setDigitalValue(0);
-    //uBit.io.P1.setDigitalValue(0);
-    spi.format(8, 3);
-    spi.frequency(1000000);
-
     uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
-//    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
+    // uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
     // End of packet detectd on incomming message
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, onData);
-
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, &gTaskManager, &TeakTaskManager::Event);
@@ -204,19 +190,6 @@ int main()
 
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
-
-    accelerometer.setRange(4);
-    //thermometer.set
-//    int p = accelerometer.getPeriod();
-//    int r = accelerometer.getRange();
-  /*  uBit.display.scroll(p);
-    uBit.display.scroll("/");
-    uBit.display.scroll(r);
-*/
-    // If main exits, there may still be other fibers running or registered event handlers etc.
-    // Simply release this fiber, which will mean we enter the scheduler. Worse case, we then
-    // sit in the idle task forever, in a power efficient sleep.
-  //  char c = 0;
 
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
@@ -229,6 +202,5 @@ int main()
         gTaskManager.Event(tick);
       }
 
-    //    release_fiber();
-    #endif
+    // release_fiber();
 }

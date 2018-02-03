@@ -1,4 +1,4 @@
-/*
+/*   FANCY
 Copyright (c) 2017 Paul Austin.
 
 Permission is hereby granted, free of charge, to any person obtaining a
@@ -24,6 +24,30 @@ DEALINGS IN THE SOFTWARE.
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
 enum
+{
+	kRM_Reserved0 = 101,
+	// READ
+	kRM_Status,
+	kRM_RpmSampleRate,
+	kRM_Rpm1,
+	kRM_Rpm2,
+	// WRITE
+	kRM_GoIdle,
+	kRM_GPIO,
+	kRM_Motor1Power,
+	kRM_Motor2Power,
+	kRM_Servo1,
+	kRM_Servo2,
+	kRM_Servo3,
+	kRM_NoteTempo,		// default
+	kRM_NotePitch,		// piano key 1-88
+	kRM_NoteLength,
+	kRM_Count,
+};
+
+
+
+enum  // FANCY
 {
 Reserved0,
 SYS_Status,
@@ -102,8 +126,9 @@ regMAX
 
 extern SPI spi;
 
+void TBCInit();
 void PlayNote(int value, int octave);
-void SetMotoPower(int motor, int power);
+void SetMotorPower(int motor, int power);
 void stopAll();
 
 #endif

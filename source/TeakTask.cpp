@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
+#include "TrashbotsController.h"
 
 extern MicroBit uBit;
 
@@ -78,10 +79,10 @@ void TeakTaskManager::Event(MicroBitEvent event)
 
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
        if (event.source == MICROBIT_ID_BUTTON_A) {
-         uBit.display.print('A');
+        // uBit.display.print('A');
          uart->send(ManagedString("(a)"));
        } else if (event.source == MICROBIT_ID_BUTTON_B) {
-         uBit.display.print('B');
+        // uBit.display.print('B');
          uart->send(ManagedString("(b)"));
        }
     }
@@ -457,20 +458,29 @@ MotorTask::MotorTask()
     m_image = kMotoBase;
 }
 
+bool m1State = false;
+bool m2State = false;
+
 TaskId MotorTask::Event(MicroBitEvent event)
 {
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         m_image = kMotoBase;
         if (event.source == MICROBIT_ID_BUTTON_A) {
             m_image |= kMotorLeftForward;
+            SetMotorPower(1, m1State ? 0 : 80);
+            m1State = !m1State;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
             m_image |= kMotorRightForward;
+            SetMotorPower(2, m2State ? 0 : 80);
+            m2State = !m2State;
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
             m_image |= kMotorLeftForward;
             m_image |= kMotorRightForward;
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
         event.source == MICROBIT_ID_BUTTON_AB) {
+        SetMotorPower(1, 0);
+        SetMotorPower(2, 0);
         return kTopMenuTask;
     } else if (event.source == MICROBIT_ID_TIMER) {
         m_image = kMotoBase;
