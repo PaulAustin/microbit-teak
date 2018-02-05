@@ -36,11 +36,12 @@ enum
 	kRM_GPIO,
 	kRM_Motor1Power,
 	kRM_Motor2Power,
+	kRM_PowerLinked,
 	kRM_Servo1,
 	kRM_Servo2,
 	kRM_Servo3,
 	kRM_NoteTempo,		// default
-	kRM_NotePitch,		// piano key 1-88
+	kRM_NoteSolfege,	// piano key 1-88
 	kRM_NoteLength,
 	kRM_Count,
 };

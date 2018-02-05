@@ -55,11 +55,19 @@ void SetMotorPower(int motor, int power)
   if (power >= 0) {
     spi.write(power);
   } else {
-    spi.write(power);        
+    spi.write(power);
   }
   uBit.io.P16.setDigitalValue(1);
   uBit.io.P1.setDigitalValue(1);
 }
+
+void PlayNote(int solfegeNote) {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(kRM_NoteSolfege);
+  spi.write(solfegeNote);
+  uBit.io.P16.setDigitalValue(1);
+}
+
 
 void onConnected(MicroBitEvent event )
 {
@@ -144,15 +152,9 @@ void onData(MicroBitEvent)
       }
     }
 } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
-    // Notes come in the form 'C4' note, octave
-    str += 4;
-    value = str[0] - 'A';
-    if ((value < 0) || (value > 6)) {
-      value =0;
-    }
-    int octave = str[1] - '0';
-    PlayNote(value, octave);
-    //uBit.display.print(value);
+    // Notes come in the form nnn where n is a the integer frequency
+    value = atoi(str + 4);
+    PlayNote(value);
   } else if ((strncmp(str, "(stop)", 6) == 0)) {
     stopAll();
   } else {

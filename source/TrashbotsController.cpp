@@ -111,19 +111,6 @@ void ServoMessage(int period, int servo) {
   */
 }
 
-void PlayNote(int note, int octave) {
-  if (note > 6 || note < 0) {
-    note = 0;
-  }
-  if (octave > 8 || octave < 0) {
-    octave = 4;
-  }
-  uBit.io.P16.setDigitalValue(0);
-  //spi.write(0x80 | kRM_SpeakerNote);
-  //spi.write((note << 4) | octave);
-  uBit.io.P16.setDigitalValue(1);
-}
-
 void stopAll()
 {
   SetMotorPower(1, 0);
