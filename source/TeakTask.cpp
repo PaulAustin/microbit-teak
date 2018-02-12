@@ -633,13 +633,11 @@ TeakTask *gTasks[] = {
 void setAdvertising(bool state)
 {
   if (state) {
-//    uBit.display.print(beaconOn);
     uBit.bleManager.setTransmitPower(6);
     uBit.bleManager.ble->setAdvertisingInterval(200);
     uBit.bleManager.ble->gap().setAdvertisingTimeout(0);
     uBit.bleManager.ble->gap().startAdvertising();
   } else {
-//    uBit.display.print(beaconOff);
     uBit.bleManager.stopAdvertising();
   }
 }

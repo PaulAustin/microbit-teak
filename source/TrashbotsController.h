@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #ifndef TRASHBOTS_CONTROLLER_SERVICE_H
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
+#if 0
 enum
 {
 	kRM_Reserved0 = 101,
@@ -45,7 +46,42 @@ enum
 	kRM_NoteLength,
 	kRM_Count,
 };
+#endif
 
+enum
+{
+	kRM_Base = 100,   	// When transfered this is the base for reserved0
+	kRM_Reserved0 = 100,
+
+	kRM_SystemFMVers1,
+	kRM_SystemFMVers2,
+	kRM_SystemStatus,
+	kRM_SystemIdle,
+
+	kRM_Motor1Cpr,
+	kRM_Motor1Rpm,
+	kRM_Motor1Power,
+	kRM_Motor2Cpr,
+	kRM_Motor2Rpm,
+	kRM_Motor2Power,
+	kRM_MotorLinked,
+	kRM_MotorResetEncoder,
+	kRM_MotorRpmSampleRate, // typically about 10Hz
+
+	kRM_ServoActive,	// bit fields for which servos are active
+	kRM_Servo1,
+	kRM_Servo2,
+	kRM_Servo3,
+
+	kRM_NoteTempo,		// default
+	kRM_NoteSolfege,	// piano key 1-88
+	kRM_NoteLength,
+
+	kRM_Gpio,			// BIT FIELD
+	kRM_GpioOutputMask,	// BIT FIELD
+
+	kRM_Count,
+};
 
 
 enum  // FANCY

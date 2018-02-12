@@ -53,9 +53,9 @@ void SetMotorPower(int motor, int power)
 
 void ReadTBCSystemStatus() {
   //char send[8] = {0, 1, 2, 3, 4, 5, 6, 7};
-  char reply[8];
   uBit.io.P16.setDigitalValue(0);
 #if 0
+char reply[8];
   // spi.write(0x80 | SYS_Status);
   spi.write(SYS_Status);  // Read class
   reply[0] = spi.write(0); //HW
