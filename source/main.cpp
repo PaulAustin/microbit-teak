@@ -45,20 +45,16 @@ void SetMotorPower(int motor, int power)
     power = -100;
   }
 
-  uBit.io.P1.setDigitalValue(0); // for scope.
+  uBit.io.P1.setDigitalValue(1); // for scope.
   uBit.io.P16.setDigitalValue(0);
   if (motor == 1) {
     spi.write(kRM_Motor1Power);
   } else {
     spi.write(kRM_Motor2Power);
   }
-  if (power >= 0) {
-    spi.write(power);
-  } else {
-    spi.write(power);
-  }
+  spi.write(power);
   uBit.io.P16.setDigitalValue(1);
-  uBit.io.P1.setDigitalValue(1);
+  uBit.io.P1.setDigitalValue(0);
 }
 
 void PlayNote(int solfegeNote) {
