@@ -82,7 +82,7 @@ void ServoStop() {
 }
 
 
-void ServoMessage(int period, int servo) {
+void ServoMessage(int, int) {
   /*
   uBit.io.P16.setDigitalValue(0);
   spi.write(0x80 | SERVO_Run);

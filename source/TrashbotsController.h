@@ -23,142 +23,59 @@ DEALINGS IN THE SOFTWARE.
 #ifndef TRASHBOTS_CONTROLLER_SERVICE_H
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
-#if 0
-enum
+enum RegMap_t
 {
-	kRM_Reserved0 = 101,
-	// READ
-	kRM_Status,
-	kRM_RpmSampleRate,
-	kRM_Rpm1,
-	kRM_Rpm2,
-	// WRITE
-	kRM_GoIdle,
-	kRM_GPIO,
-	kRM_Motor1Power,
-	kRM_Motor2Power,
-	kRM_PowerLinked,
-	kRM_Servo1,
-	kRM_Servo2,
-	kRM_Servo3,
-	kRM_NoteTempo,		// default
-	kRM_NoteSolfege,	// piano key 1-88
-	kRM_NoteLength,
-	kRM_Count,
-};
-#endif
-
-enum
-{
-	kRM_Base = 100,   	// When transfered this is the base for reserved0
-	kRM_Reserved0 = 100,
-
-	kRM_SystemFMVers1,
+	kRM_SystemFMVers1 = 1,
 	kRM_SystemFMVers2,
 	kRM_SystemStatus,
 	kRM_SystemIdle,
+	kRM_SystemStop,		     // Stop all IO,turn off all GPIO
+	kRM_System5VAutoSleep,   // Disable for encoders to work all the time.
+	kRM_GroupTillTrigger,
+	kRM_Trigger,
 
-	kRM_Motor1Cpr,
-	kRM_Motor1Rpm,
-	kRM_Motor1Power,
-	kRM_Motor2Cpr,
-	kRM_Motor2Rpm,
-	kRM_Motor2Power,
-	kRM_MotorLinked,
-	kRM_MotorResetEncoder,
-	kRM_MotorRpmSampleRate, // typically about 10Hz
+	kRM_Motor1Power 	= 10,
+	kRM_Motor1Rpm 		= 11,
+	kRM_Motor1Break 	= 12,
+	kRM_Motor1Cpr 		= 13,
+	kRM_Motor1Countdown = 14,
+	kRM_Motor1Encoder   = 15,
+	// P, I , D  ??
 
-	kRM_ServoActive,	// bit fields for which servos are active
-	kRM_Servo1,
-	kRM_Servo2,
-	kRM_Servo3,
+	kRM_Motor2Power 	= 20,
+	kRM_Motor2Rpm 		= 21,
+	kRM_Motor2Break 	= 22,
+	kRM_Motor2Cpr 		= 23,
+	kRM_Motor2Countdowm = 24,
+	kRM_Motor2Encoder	= 25,
+	// P, I , D  ??
 
-	kRM_NoteTempo,		// default
-	kRM_NoteSolfege,	// piano key 1-88
-	kRM_NoteLength,
 
-	kRM_Gpio,			// BIT FIELD
+	kRM_MotorRpmSampleRate = 33, // typically about 10Hz
+
+	kRM_Servo1Active	= 40, // 0:off,   1:0-2ms, O:custom ???
+	kRM_Servo2Active 	= 41,
+	kRM_Servo3Active 	= 42,
+	// Room for more ...
+	kRM_Servo1Position  = 50,
+	kRM_Servo2Position  = 51,
+	kRM_Servo3Position  = 52,
+	// Room for more ...
+
+
+	kRM_NoteTempo 		= 60,	// default
+	kRM_NoteLength 		= 61,
+	kRM_NoteSolfege 	= 62,	// piano key 1-88
+	kRM_NoteHertz 		= 63,	// 0-14k??
+
+	kRM_Gpio 			= 70,	    // BIT FIELD
+	kRM_Gpio1 			= 71,	    // individual bits
+	kRM_Gpio2 			= 72,	    // individual bits
+	kRM_Gpio3 			= 73,	    // individual bits
+	kRM_Gpio4 			= 74,	    // individual bits
 	kRM_GpioOutputMask,	// BIT FIELD
 
-	kRM_Count,
-};
-
-
-enum  // FANCY
-{
-Reserved0,
-SYS_Status,
-SYS_Settings,
-SYS_Extra01,
-BEEP_PlayNote,
-BEEP_PlayTune,
-BEEP_Status,
-BEEP_Tune0,
-BEEP_Tune1,
-BEEP_Tune2,
-BEEP_Tune3,
-BEEP_Settings,
-BEEP_Extra20,
-BEEP_Extra19,
-BEEP_Extra18,
-BEEP_Extra17,
-BEEP_Extra16,
-BEEP_Extra15,
-BEEP_Extra14,
-BEEP_Extra13,
-BEEP_Extra12,
-BEEP_Extra11,
-BEEP_Extra10,
-BEEP_Extra09,
-BEEP_Extra08,
-BEEP_Extra07,
-BEEP_Extra06,
-BEEP_Extra05,
-BEEP_Extra04,
-BEEP_Extra03,
-BEEP_Extra02,
-BEEP_Extra01,
-SERVO_Run,
-SERVO_Status,
-SERVO_Period,
-SERVO_Set1,
-SERVO_Set2,
-SERVO_Set3,
-SERVO_Extra10,
-SERVO_Extra09,
-SERVO_Extra08,
-SERVO_Extra07,
-SERVO_Extra06,
-SERVO_Extra05,
-SERVO_Extra04,
-SERVO_Extra03,
-SERVO_Extra02,
-SERVO_Extra01,
-MOTOR_Run,
-MOTOR_Status,
-MOTOR_Set1,
-MOTOR_Set2,
-MOTOR_Encoder,
-MOTOR_Extra03,
-MOTOR_Extra02,
-MOTOR_Extra01,
-ENC_Count,
-ENC_Speed,
-ENC_Setttings,
-ENC_Extra05,
-ENC_Extra04,
-ENC_Extra03,
-ENC_Extra02,
-ENC_Extra01,
-GPIO_ReadPins,
-GPIO_WritePins,
-GPIO_Mode,
-GPIO_Pullup,
-GPIO_Extra04,
-GPIO_Extra03,
-GPIO_Extra02,
-GPIO_Extra01,
-regMAX
+	kRM_Count 			= 80,
 };
 
 extern SPI spi;

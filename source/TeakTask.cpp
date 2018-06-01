@@ -467,11 +467,11 @@ TaskId MotorTask::Event(MicroBitEvent event)
         m_image = kMotoBase;
         if (event.source == MICROBIT_ID_BUTTON_A) {
             m_image |= kMotorLeftForward;
-            SetMotorPower(1, m1State ? 0 : 80);
+            SetMotorPower(1, m1State ? 0 : -100);
             m1State = !m1State;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
             m_image |= kMotorRightForward;
-            SetMotorPower(2, m2State ? 0 : 80);
+            SetMotorPower(2, m2State ? 0 : 100);
             m2State = !m2State;
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
             m_image |= kMotorLeftForward;

@@ -45,7 +45,6 @@ void SetMotorPower(int motor, int power)
     power = -100;
   }
 
-  uBit.io.P1.setDigitalValue(1); // for scope.
   uBit.io.P16.setDigitalValue(0);
   if (motor == 1) {
     spi.write(kRM_Motor1Power);
@@ -54,7 +53,6 @@ void SetMotorPower(int motor, int power)
   }
   spi.write(power);
   uBit.io.P16.setDigitalValue(1);
-  uBit.io.P1.setDigitalValue(0);
 }
 
 void PlayNote(int solfegeNote) {
@@ -63,7 +61,6 @@ void PlayNote(int solfegeNote) {
   spi.write(solfegeNote);
   uBit.io.P16.setDigitalValue(1);
 }
-
 
 void onConnected(MicroBitEvent event )
 {
