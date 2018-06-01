@@ -145,8 +145,14 @@ void onData(MicroBitEvent)
       }
     }
 } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
-    // Notes come in the form nnn where n is a the integer frequency
+    // Notes come in the form nn where n is the
+    // piano key number
     value = atoi(str + 4);
+    if (value <= 13) {
+      // early version pay in register0 ( notes 1-12 ( + next C))
+      // bump to C4 (key number 40)
+      value += 39;
+    }
     PlayNote(value);
   } else if ((strncmp(str, "(stop)", 6) == 0)) {
     stopAll();
