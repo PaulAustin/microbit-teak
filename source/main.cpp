@@ -20,6 +20,8 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 */
 
+#include <string>
+#include <stdio.h>
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
@@ -27,6 +29,10 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
+MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
+
+int accelerometerBig = NULL;
+int accelerometerSmall = NULL;
 
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
@@ -156,6 +162,13 @@ void onData(MicroBitEvent)
     PlayNote(value);
   } else if ((strncmp(str, "(stop)", 6) == 0)) {
     stopAll();
+  } else if ((strncmp(str, "(accel)", 7) == 0)) {
+    char str [30];
+    snprintf(str, sizeof(str), "(accel:%d %d)", accelerometerSmall, accelerometerBig);
+
+    uart->send(ManagedString(str));
+    accelerometerBig = NULL;
+    accelerometerSmall = NULL;
   } else {
     uBit.display.scroll(str);
   }
@@ -201,7 +214,23 @@ int main()
         fiber_sleep(100);
         tick.value = tickCount;
         gTaskManager.Event(tick);
-      }
+
+        int accelerometerData = accelerometer.getX();
+
+        if(accelerometerBig == NULL){
+          accelerometerBig = accelerometerData;
+        }
+
+        if(accelerometerSmall == NULL) {
+          accelerometerSmall = accelerometerData;
+        }
+
+        if(accelerometerData > accelerometerBig){
+          accelerometerBig = accelerometerData;
+        } else if (accelerometerData < accelerometerSmall) {
+          accelerometerSmall = accelerometerData;
+        }
+    }
 
     // release_fiber();
 }
