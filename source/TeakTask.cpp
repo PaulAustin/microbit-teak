@@ -84,6 +84,9 @@ void TeakTaskManager::Event(MicroBitEvent event)
        } else if (event.source == MICROBIT_ID_BUTTON_B) {
         // uBit.display.print('B');
          uart->send(ManagedString("(b)"));
+       } else if (event.source == MICROBIT_ID_BUTTON_AB) {
+        // uBit.display.print('AB');
+         uart->send(ManagedString("(ab)"));
        }
     }
 
