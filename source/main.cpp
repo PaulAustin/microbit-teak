@@ -30,9 +30,8 @@ DEALINGS IN THE SOFTWARE.
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
 MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
-
-int accelerometerBig = NULL;
-int accelerometerSmall = NULL;
+MicroBitStorage storage;
+MicroBitThermometer thermometer(storage);
 
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
@@ -162,13 +161,6 @@ void onData(MicroBitEvent)
     PlayNote(value);
   } else if ((strncmp(str, "(stop)", 6) == 0)) {
     stopAll();
-  } else if ((strncmp(str, "(accel)", 7) == 0)) {
-    char str [30];
-    snprintf(str, sizeof(str), "(accel:%d %d)", accelerometerSmall, accelerometerBig);
-
-    uart->send(ManagedString(str));
-    accelerometerBig = NULL;
-    accelerometerSmall = NULL;
   } else {
     uBit.display.scroll(str);
   }
@@ -216,20 +208,20 @@ int main()
         gTaskManager.Event(tick);
 
         int accelerometerData = accelerometer.getX();
+        //processAccelerometerData(accelerometerData);
 
-        if(accelerometerBig == NULL){
-          accelerometerBig = accelerometerData;
-        }
+        int thermometerData = thermometer.getTemperature();
+        //processThermometerData(thermometerData);
 
-        if(accelerometerSmall == NULL) {
-          accelerometerSmall = accelerometerData;
-        }
+        char accelString [30];
+        snprintf(accelString, sizeof(accelString), "(accel:%d)", accelerometerData);
+        char tempString [30];
+        snprintf(tempString, sizeof(tempString), "(temp:%d)", thermometerData);
+        uart->send(ManagedString(accelString));
+        uart->send(ManagedString(tempString));
 
-        if(accelerometerData > accelerometerBig){
-          accelerometerBig = accelerometerData;
-        } else if (accelerometerData < accelerometerSmall) {
-          accelerometerSmall = accelerometerData;
-        }
+        //int gyroData = accelerometer.getX();
+        //processGyroData(gyroData);
     }
 
     // release_fiber();
