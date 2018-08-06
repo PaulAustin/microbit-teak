@@ -159,11 +159,14 @@ void onData(MicroBitEvent)
       value += 39;
     }
     PlayNote(value);
-  } else if ((strncmp(str, "(stop)", 6) == 0)) {
+} else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
+    value = atoi(str + 4);
+    uBit.display.scroll(value);
+} else if ((strncmp(str, "(stop)", 6) == 0)) {
     stopAll();
-  } else {
+} else {
     uBit.display.scroll(str);
-  }
+}
 
   s->decr();
 }
