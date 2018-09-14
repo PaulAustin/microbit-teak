@@ -29,7 +29,7 @@ DEALINGS IN THE SOFTWARE.
 
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
-MicroBitAccelerometer accelerometer = MicroBitAccelerometer(i2c);
+
 MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
@@ -177,11 +177,10 @@ int main()
     uBit.init();
 
     spi.format(8, 3);
-     spi.frequency(1000000);
+    spi.frequency(1000000);
 
-    //TBCInit();
-    //uBit.display.print('A');
-
+    // TBCInit();
+    // uBit.display.print('A');
     // Set to be initially off.
     // setAdvertising(bAdvertising);
 
@@ -206,11 +205,11 @@ int main()
 
     while(1) {
         tickCount++;
-        fiber_sleep(100);
+        fiber_sleep(50);
         tick.value = tickCount;
         gTaskManager.Event(tick);
 
-        int accelerometerData = accelerometer.getX();
+        int accelerometerData = uBit.accelerometer.getX();
         //processAccelerometerData(accelerometerData);
 
         int thermometerData = thermometer.getTemperature();
@@ -222,9 +221,6 @@ int main()
         snprintf(tempString, sizeof(tempString), "(temp:%d)", thermometerData);
         uart->send(ManagedString(accelString));
         uart->send(ManagedString(tempString));
-
-        //int gyroData = accelerometer.getX();
-        //processGyroData(gyroData);
     }
 
     // release_fiber();

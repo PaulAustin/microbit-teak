@@ -235,7 +235,7 @@ TaskId BootTask::Event(MicroBitEvent event)
             // Truw while the filem is playing.
             m_image = bootImages[m_frame];
             m_delay--;
-            if (m_delay<=0) {
+            if (m_delay <= 0) {
                 // Bump to next frame, and reset delay
                 m_frame++;
                 m_delay = PBmapFrameCount(bootImages[m_frame]);
@@ -255,7 +255,7 @@ TaskId BootTask::Event(MicroBitEvent event)
             }
             // Scolling is done in background of
             // of the main loop.
-            uBit.display.scrollAsync(name);
+            uBit.display.scrollAsync(name, 80);
             m_booting = kBotNameScrolling;
         }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
