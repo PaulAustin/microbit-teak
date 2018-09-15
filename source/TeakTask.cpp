@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2017 Paul Austin.
+Copyright (c) 2018 Paul Austin.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -24,6 +24,7 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 #include "TrashbotsController.h"
+#include "BootImages.h"
 
 extern MicroBit uBit;
 
@@ -161,66 +162,6 @@ private:
 
 BootTask gBootTask;
 
-const int bootImages[] __attribute__ ((aligned(4))) = {
-  PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(4)),
-  PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 1, 1, 1, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(3)),
-  PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(1, 1, 1, 1, 1),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(3)),
-  PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(1, 1, 0, 1, 1),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(3)),
-  PBMAP(
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_FRAME_COUNT(2)),
-  PBMAP(
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_FRAME_COUNT(2)),
-  PBMAP(
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_FRAME_COUNT(2)),
-  PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(6)),
-    0 // End of film strip
-  };
-
 BootTask::BootTask()
 {
     m_frame = 0;
@@ -259,8 +200,10 @@ TaskId BootTask::Event(MicroBitEvent event)
             m_booting = kBotNameScrolling;
         }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
-        // MICROBIT_DISPLAY_EVT_FREE is fired once the name
-        // has scrolled by.
+        // MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
+        m_booting = kBootDone;
+    } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        uBit.display.stopAnimation();
         m_booting = kBootDone;
     }
 
