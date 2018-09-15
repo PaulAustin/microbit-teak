@@ -24,7 +24,6 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 #include "TrashbotsController.h"
-#include "BootImages.h"
 
 extern MicroBit uBit;
 
@@ -46,6 +45,8 @@ in n/2 button taps.
 // being transfered to the main display.
 extern TeakTask *gTasks[];
 TeakTaskManager gTaskManager;
+
+#if 1
 bool hackConnected = false;
 const int pm_connect = PBMAP(
     PBMAP_ROW(1, 0, 0, 0, 1),
@@ -62,6 +63,8 @@ const int pm_disconnect = PBMAP(
     PBMAP_ROW(0, 0, 1, 0, 0),
     PBMAP_ROW(1, 0, 0, 0, 1),
     PBMAP_FRAME_COUNT(1));
+
+#endif
 
 TaskId CheckBLEEvents(MicroBitEvent event);
 
@@ -142,86 +145,12 @@ int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 #define MICROBIT_BUTTON_STATE_LONG_CLICK        8
 #endif
 
-//------------------------------------------------------------------------------
-// The initial task that starts when the BM boots.
-class BootTask : public TeakTask {
-public:
-    BootTask();
-    TaskId Event(MicroBitEvent event);
-private:
-    uint8_t m_frame;
-    uint8_t m_delay;
-    uint8_t m_booting;
-    enum {
-      kBootDone = 0,
-      kSplashAnimation,
-      kSplashDone,
-      kBotNameScrolling,
-    };
-};
-
-BootTask gBootTask;
-
-BootTask::BootTask()
-{
-    m_frame = 0;
-    m_delay = PBmapFrameCount(bootImages[m_frame]);
-    m_booting = kSplashAnimation;
-}
-
-TaskId BootTask::Event(MicroBitEvent event)
-{
-    if (event.source == MICROBIT_ID_TIMER) {
-        if (m_booting == kSplashAnimation) {
-            // Truw while the filem is playing.
-            m_image = bootImages[m_frame];
-            m_delay--;
-            if (m_delay <= 0) {
-                // Bump to next frame, and reset delay
-                m_frame++;
-                m_delay = PBmapFrameCount(bootImages[m_frame]);
-            }
-            if (m_delay == 0) {
-                m_booting = kSplashDone;
-            }
-        }
-        if (m_booting == kSplashDone) {
-            // At end of launch picture, show name
-            char* name = microbit_friendly_name();
-            // Change to all caps in place, crazy stuff.
-            char* upperName = name;
-            for (int i = strlen(name); i ; i--) {
-               *upperName = toupper(*upperName);
-               upperName++;
-            }
-            // Scolling is done in background of
-            // of the main loop.
-            uBit.display.scrollAsync(name, 80);
-            m_booting = kBotNameScrolling;
-        }
-    } else if (event.source == MICROBIT_ID_DISPLAY) {
-        // MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
-        m_booting = kBootDone;
-    } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-        uBit.display.stopAnimation();
-        m_booting = kBootDone;
-    }
-
-    return (m_booting != kBootDone) ? kSameTask : kTopMenuTask;
-}
 
 //------------------------------------------------------------------------------
 // A mini task for scrolling from one item to another.
-class ScrollTask : public TeakTask {
-public:
-    TaskId Setup(TaskId current, bool toLeft);
-    TaskId Event(MicroBitEvent event);
-public:
-    TaskId  m_next;
-    uint8_t m_step;
-    uint8_t m_toLeft;
-};
+
 ScrollTask gScrollTask;
+ScrollTask* gpScrollTask = &gScrollTask;
 
 TaskId ScrollTask::Setup(TaskId current, bool toLeft)
 {
@@ -285,179 +214,6 @@ TaskId ScrollTask::Event(MicroBitEvent event)
 }
 
 //------------------------------------------------------------------------------
-class TopMenuTask : public TeakTask {
-public:
-    TopMenuTask();
-    TaskId Event(MicroBitEvent event);
-    TeakTask* ActiveTask() { return gTasks[m_activeTask]; }
-    TaskId HighlightLine();
-    enum {
-      kTopMenuBrowse,
-      kTopMenuSwipeIn,
-      kTopMenuSwipeOut,
-    };
-public:
-    TaskId m_activeTask;
-    int8_t m_highlightFrame;
-    int8_t m_state;
-};
-TopMenuTask gTopMenuTask;
-
-TopMenuTask::TopMenuTask()
-{
-    m_activeTask = kFirstInRing;
-    m_state = kTopMenuBrowse;
-    m_image = ActiveTask()->PackedImage();
-}
-
-TaskId TopMenuTask::HighlightLine()
-{
-    m_image = ActiveTask()->PackedImage();
-    // Animate bar from top or bottom based on state.
-    int offset = (m_state == kTopMenuSwipeIn)
-        ? m_highlightFrame
-        : (4 - m_highlightFrame);
-    int mask = 0x0000001f << (5 * offset);
-    m_image = m_image | mask;
-
-    // Prep for next frame.
-    if (m_highlightFrame < 5) {
-        // Still animatting,
-        m_highlightFrame++;
-        return kSameTask;
-    } else {
-        // All done, reset the state and frame count.
-        m_highlightFrame = 0;
-        if (m_state == kTopMenuSwipeIn) {
-            // Swipped in the new task, activte it
-            // and leave this teask ready to swipe back in.
-            m_state = kTopMenuSwipeOut;
-            return m_activeTask;
-        } else {
-            // The old task has been swipped out , change the state
-            // and stay with the menu task.
-            m_state = kTopMenuBrowse;
-            return kSameTask;
-        }
-    }
-}
-
-TaskId TopMenuTask::Event(MicroBitEvent event)
-{
-    // Watch for events that are managed independent of state.
-
-    // process events that are specific to state.
-    switch(m_state) {
-    case kTopMenuSwipeIn:
-    case kTopMenuSwipeOut:
-        if (event.source == MICROBIT_ID_TIMER) {
-          return HighlightLine();
-        }
-        break;
-    case kTopMenuBrowse:
-        if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-            m_state = kTopMenuBrowse;
-            if (event.source == MICROBIT_ID_BUTTON_A) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, false);
-                return kScrollTask;
-            } else if (event.source == MICROBIT_ID_BUTTON_B) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, true);
-                return kScrollTask;
-            }
-        } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
-            if (event.source == MICROBIT_ID_BUTTON_AB) {
-                m_state = kTopMenuSwipeIn;
-                return kSameTask;
-            }
-        } else if (event.source == MICROBIT_ID_TIMER) {
-            m_image = ActiveTask()->PackedImage();
-        }
-        break;
-    }
-    return kSameTask;
-}
-
-//------------------------------------------------------------------------------
-// A task for direct control of the motors
-class MotorTask : public TeakTask {
-public:
-    MotorTask();
-    TaskId Event(MicroBitEvent event);
-};
-MotorTask gMotorTask;
-
-const int kMotoBase = PBMAP(
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(1, 0, 1, 0, 1),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_FRAME_COUNT(1));
-
-const int kMotorLeftForward  =  PBMAP(PBMAP_ROW(0, 1, 0, 0, 0), 0, 0, 0, 0, 0);
-const int kMotorRightForward =  PBMAP(PBMAP_ROW(0, 0, 0, 1, 0), 0, 0, 0, 0, 0);
-const int kMotorLeftBack     =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 1, 0, 0, 0), 0);
-const int kMotorRightBack    =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 0, 0, 1, 0), 0);
-
-MotorTask::MotorTask()
-{
-    m_image = kMotoBase;
-}
-
-bool m1State = false;
-bool m2State = false;
-
-TaskId MotorTask::Event(MicroBitEvent event)
-{
-    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-        m_image = kMotoBase;
-        if (event.source == MICROBIT_ID_BUTTON_A) {
-            m_image |= kMotorLeftForward;
-            SetMotorPower(1, m1State ? 0 : -100);
-            m1State = !m1State;
-        } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            m_image |= kMotorRightForward;
-            SetMotorPower(2, m2State ? 0 : 100);
-            m2State = !m2State;
-        } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            m_image |= kMotorLeftForward;
-            m_image |= kMotorRightForward;
-        }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-        event.source == MICROBIT_ID_BUTTON_AB) {
-        SetMotorPower(1, 0);
-        SetMotorPower(2, 0);
-        return kTopMenuTask;
-    } else if (event.source == MICROBIT_ID_TIMER) {
-        m_image = kMotoBase;
-        if (event.value & 0x08) {
-          m_image &= ~(0x04 << 10);
-        }
-    }
-    return kSameTask;
-}
-
-//------------------------------------------------------------------------------
-// A task for running the users saved program.
-// Perhaps there are 2 or 3 programs
-class UserProgramTask : public TeakTask {
-public:
-    UserProgramTask();
-};
-UserProgramTask gUserProgramTask;
-
-UserProgramTask::UserProgramTask()
-{
-    m_image = PBMAP(
-        PBMAP_ROW(1, 0, 0, 0, 1),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(1, 0, 0, 0, 1),
-        PBMAP_FRAME_COUNT(1));
-}
-
-//------------------------------------------------------------------------------
 // Turn on bluetooth advertising.
 class BlueToothTask : public TeakTask {
 public:
@@ -503,56 +259,18 @@ TaskId BlueToothTask::Event(MicroBitEvent event)
 }
 
 //------------------------------------------------------------------------------
-// A task to use the built-in level (accelerometer)
-class LevelTask  : public TeakTask {
-public:
-    LevelTask();
-};
-LevelTask gLevelTask;
-
-LevelTask::LevelTask()
-{
-    m_image = PBMAP(
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 1, 0, 1, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_FRAME_COUNT(1));
-}
-
-//------------------------------------------------------------------------------
-// A teask to use the built-in temp
-class TempTask  : public TeakTask {
-public:
-    TempTask();
-};
-TempTask gTempTask;
-
-TempTask::TempTask()
-{
-    m_image = PBMAP(
-        PBMAP_ROW(0, 1, 1, 1, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 1, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_FRAME_COUNT(1));
-}
-
-//------------------------------------------------------------------------------
 TaskId CheckBLEEvents(MicroBitEvent event)
 {
     // Watch for events that are managed independent of state.
     if (event.source == MICROBIT_ID_BLE) {
         if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
             hackConnected = true;
-            gUserProgramTask.m_image = pm_connect;
+            gBlueToothTask.m_image = pm_connect;
             uBit.display.print('C');
             return kUserProgramTask;
         } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
             hackConnected = false;
-            gUserProgramTask.m_image = pm_disconnect;
+            gBlueToothTask.m_image = pm_disconnect;
             uBit.display.print('D');
             return kBlueToothTask;
         }
@@ -563,16 +281,24 @@ TaskId CheckBLEEvents(MicroBitEvent event)
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
+
+extern TeakTask* gpBootTask;
+extern TeakTask* gpTopMenuTask;
+extern TeakTask* gpMotorTask;
+extern TeakTask* gpUserProgramTask;
+extern TeakTask* gpLevelTask;
+extern TeakTask* gpTempTask;
+
 TeakTask *gTasks[] = {
     (TeakTask*) NULL,
-    &gBootTask,
-    &gTopMenuTask,
+    gpBootTask,
+    gpTopMenuTask,
     &gScrollTask,
-    &gMotorTask,
-    &gUserProgramTask,
+    gpMotorTask,
+    gpUserProgramTask,
     &gBlueToothTask,
-    &gLevelTask,
-    &gTempTask
+    gpLevelTask,
+    gpTempTask
 };
 
 //------------------------------------------------------------------------------

@@ -65,6 +65,16 @@ public:
 };
 extern TeakTask* gTasks[];
 
+class ScrollTask : public TeakTask {
+public:
+    TaskId Setup(TaskId current, bool toLeft);
+    TaskId Event(MicroBitEvent event);
+public:
+    TaskId  m_next;
+    uint8_t m_step;
+    uint8_t m_toLeft;
+};
+
 // TeakMenu - routs events to the appropriate module
 class TeakTaskManager {
 public:
