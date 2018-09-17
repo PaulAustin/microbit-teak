@@ -46,6 +46,9 @@ in n/2 button taps.
 extern TeakTask *gTasks[];
 TeakTaskManager gTaskManager;
 
+ManagedString eom(";");
+MicroBitUARTServiceFixed *uart;
+
 #if 1
 bool hackConnected = false;
 const int pm_connect = PBMAP(
@@ -68,13 +71,32 @@ const int pm_disconnect = PBMAP(
 
 TaskId CheckBLEEvents(MicroBitEvent event);
 
+void TeakTaskManager::SetupEventListeners()
+{
+    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
+    // uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
+    // End of packet detectd on incomming message
+
+    uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, this, &TeakTaskManager::MicrobitBtEvent);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
+    uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
+    uBit.messageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
+
+    // Note GATT table size increased from default in MicroBitConfig.h
+    // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
+
+    uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
+    uart->eventOn(eom, ASYNC);
+}
+
 TeakTaskManager::TeakTaskManager()
 {
     // Start wth the boot task.
     m_currentTask = kBootTask;
 }
 
-void TeakTaskManager::Event(MicroBitEvent event)
+void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 {
     TaskId next = CheckBLEEvents(event);
     if (next != kSameTask) {
@@ -99,7 +121,6 @@ void TeakTaskManager::Event(MicroBitEvent event)
         return;
 
     TaskId nextTask = CurrentTask()->Event(event);
-
 
     int newImage = CurrentTask()->PackedImage();
     if (newImage != m_currentImage)  {
@@ -246,4 +267,143 @@ void setAdvertising(bool state)
     } else {
         uBit.bleManager.stopAdvertising();
     }
+}
+
+
+//------------------------------------------------------------------------------
+// Could the code tap into the lower layer, and look for complete expression
+// that would be better. It will be helpful to have sctatter string support.
+SPI spi(MOSI, MISO, SCK);
+
+void SetMotorPower(int motor, int power)
+{
+  if (motor < 1 || motor > 2)
+    return;
+
+  if (power > 100) {
+    power = 100;
+  } else if (power < -100) {
+    power = -100;
+  }
+
+  uBit.io.P16.setDigitalValue(0);
+  if (motor == 1) {
+    spi.write(kRM_Motor1Power);
+  } else {
+    spi.write(kRM_Motor2Power);
+  }
+  spi.write(power);
+  uBit.io.P16.setDigitalValue(1);
+}
+
+void PlayNote(int solfegeNote) {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(kRM_NoteSolfege);
+  spi.write(solfegeNote);
+  uBit.io.P16.setDigitalValue(1);
+}
+
+void onConnected(MicroBitEvent event )
+{
+    // Need to note this in a different way
+    uBit.display.print('C');
+    gTaskManager.MicrobitDalEvent(event);
+    return;
+}
+
+void onDisconnected(MicroBitEvent event)
+{
+   // Need to note this in a different way
+    uBit.display.print('D');
+    gTaskManager.MicrobitDalEvent(event);
+    return;
+}
+
+int hexCharToInt(char c) {
+  if ((c >= '0') && (c <= '9')) {
+    return c - '0';
+  } else if ((c >= 'a') && (c <= 'f')) {
+    return c - 'a' + 10;
+  }  else if ((c >= 'A') && (c <= 'F')) {
+    return c - 'A' + 10;
+  }
+  return 0;
+}
+
+MicroBitImage image(5,5);
+int j = 0;
+int pixVal = 1;
+
+// Called when a delimiter is found.
+void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
+{
+  // If the event was called there should be a message
+  ManagedString buff = uart->readUntil(eom, ASYNC);
+  StringData *s = buff.leakData();
+  // Internal buffer is null terminated as well.
+  //teak::tstring command(s->data);
+  char* str = s->data;
+  int len = strlen(str);
+  int value = 0;
+  // one command to start with, the picture display
+  // P0123456789:
+  // the numebers are hex, the five bits are packed into two hex digits.
+  if ((strncmp(str, "(px:", 4) == 0) && len >= 14) {
+    str += 4;
+    for (int i = 0; i < 5; i++) {
+      char c1 = hexCharToInt(*str);
+      str++;
+      char c2 = hexCharToInt(*str);
+      str++;
+      image.setPixelValue(0, i, c1 & 0x01);
+      image.setPixelValue(1, i, c2 & 0x08);
+      image.setPixelValue(2, i, c2 & 0x04);
+      image.setPixelValue(3, i, c2 & 0x02);
+      image.setPixelValue(4, i, c2 & 0x01);
+    }
+    uBit.display.print(image);
+  } else if ((strncmp(str, "(sr:", 4) == 0) && len >= 5) {
+    str += 4;
+    value = atoi(str);
+    uBit.io.P1.setServoValue(value);
+    uBit.display.scroll("S");
+  } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
+    str += 3;
+    if(strncmp(str, "(1 2)", 5) == 0){
+      if(strncmp(str + 6, "d", 1) == 0){
+        value = atoi(str + 8);
+        SetMotorPower(1, value);
+        SetMotorPower(2, -value);
+      }
+    } else if(strncmp(str, "1", 1) == 0) {
+      if(strncmp(str + 2, "d", 1) == 0) {
+        value = atoi(str + 4);
+        SetMotorPower(1, value);
+      }
+    } else if(strncmp(str, "2", 1) == 0) {
+      if(strncmp(str + 2, "d", 1) == 0) {
+        value = atoi(str + 4);
+        SetMotorPower(2, -value);
+      }
+    }
+} else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
+    // Notes come in the form nn where n is the
+    // piano key number
+    value = atoi(str + 4);
+    if (value <= 13) {
+      // early version pay in register0 ( notes 1-12 ( + next C))
+      // bump to C4 (key number 40)
+      value += 39;
+    }
+    PlayNote(value);
+} else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
+    value = atoi(str + 4);
+    uBit.display.scroll(value);
+} else if ((strncmp(str, "(stop)", 6) == 0)) {
+    stopAll();
+} else {
+    uBit.display.scroll(str);
+}
+
+  s->decr();
 }

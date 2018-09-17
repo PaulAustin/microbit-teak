@@ -69,7 +69,10 @@ extern TeakTask* gTasks[];
 class TeakTaskManager {
 public:
     TeakTaskManager();
-    void Event(MicroBitEvent event);
+    void SetupEventListeners();
+    void MicrobitDalEvent(MicroBitEvent event);
+    void MicrobitBtEvent(MicroBitEvent event);
+
     TeakTask* CurrentTask() { return gTasks[m_currentTask]; };
 private:
     int m_currentImage = 0;
