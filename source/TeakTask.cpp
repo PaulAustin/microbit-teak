@@ -78,20 +78,20 @@ void TeakTaskManager::Event(MicroBitEvent event)
 {
     TaskId next = CheckBLEEvents(event);
     if (next != kSameTask) {
-      return;
+        return;
     }
 
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-       if (event.source == MICROBIT_ID_BUTTON_A) {
-        // uBit.display.print('A');
-         uart->send(ManagedString("(a)"));
-       } else if (event.source == MICROBIT_ID_BUTTON_B) {
-        // uBit.display.print('B');
-         uart->send(ManagedString("(b)"));
-       } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-        // uBit.display.print('AB');
-         uart->send(ManagedString("(ab)"));
-       }
+         if (event.source == MICROBIT_ID_BUTTON_A) {
+            // uBit.display.print('A');
+             uart->send(ManagedString("(a)"));
+         } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            // uBit.display.print('B');
+             uart->send(ManagedString("(b)"));
+         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
+            // uBit.display.print('AB');
+             uart->send(ManagedString("(ab)"));
+         }
     }
 
     // If connected then ignore local menu system.
@@ -145,74 +145,6 @@ int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 #define MICROBIT_BUTTON_STATE_LONG_CLICK        8
 #endif
 
-
-//------------------------------------------------------------------------------
-// A mini task for scrolling from one item to another.
-
-ScrollTask gScrollTask;
-ScrollTask* gpScrollTask = &gScrollTask;
-
-TaskId ScrollTask::Setup(TaskId current, bool toLeft)
-{
-    m_image = gTasks[current]->PackedImage();
-    if (toLeft) {
-        if (current >= kLastInRing) {
-            m_next = kFirstInRing;
-        } else {
-            m_next = (TaskId) (current + 1);
-        }
-    } else {
-        if (current <= kFirstInRing) {
-          m_next = kLastInRing;
-        } else {
-          m_next = (TaskId) (current - 1);
-        }
-    }
-    m_step = 0;
-    m_toLeft = toLeft;
-    return m_next;
-}
-
-TaskId ScrollTask::Event(MicroBitEvent event)
-{
-    if (event.source != MICROBIT_ID_TIMER)
-        return kSameTask;
-
-//    int imageFrom = gTasks[m_from]->PackedImage();
-    int imageTo = gTasks[m_next]->PackedImage();
-
-    int leftMask = PBMAP(
-        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
-        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
-        PBMAP_ROW(1, 0, 0, 0, 0),
-        0);
-
-    int rightMask = PBMAP(
-        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
-        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
-        PBMAP_ROW(0, 0, 0, 0, 1),
-        0);
-
-    // In each frame slide From and replace right/left edge with
-    // bits from To frame.
-    if (m_toLeft) {
-        m_image = (m_image << 1) & ~rightMask;
-        if (m_step>0) {
-            m_image = m_image | ((imageTo >> (5-m_step)) & rightMask);
-        }
-    } else {
-        m_image = (m_image >> 1) & ~leftMask;
-        if (m_step>0) {
-            m_image = m_image | ((imageTo << (5-m_step)) & leftMask);
-        }
-    }
-
-    // Advance the animation frame
-    m_step++;
-
-    return (m_step < 5) ? kSameTask : kTopMenuTask ;
-}
-
 //------------------------------------------------------------------------------
 // Turn on bluetooth advertising.
 class BlueToothTask : public TeakTask {
@@ -222,6 +154,7 @@ public:
     TaskId Event(MicroBitEvent event);
 };
 BlueToothTask gBlueToothTask;
+TeakTask *gpBlueToothTask = &gBlueToothTask;
 
 const int kBluetootBaseImage = PBMAP(
     PBMAP_ROW(1, 1, 1, 1, 1),
@@ -251,7 +184,7 @@ TaskId BlueToothTask::Event(MicroBitEvent event)
         }
         m_image = kBluetootBaseImage;
         if (event.value & 0x08) {
-          m_image &= ~(0x04 << 10);
+            m_image &= ~(0x04 << 10);
         }
         // Once connected to it can pop back to the top menu.
     }
@@ -284,6 +217,7 @@ TaskId CheckBLEEvents(MicroBitEvent event)
 
 extern TeakTask* gpBootTask;
 extern TeakTask* gpTopMenuTask;
+extern TeakTask* gpScrollTask;
 extern TeakTask* gpMotorTask;
 extern TeakTask* gpUserProgramTask;
 extern TeakTask* gpLevelTask;
@@ -293,10 +227,10 @@ TeakTask *gTasks[] = {
     (TeakTask*) NULL,
     gpBootTask,
     gpTopMenuTask,
-    &gScrollTask,
+    gpScrollTask,
     gpMotorTask,
     gpUserProgramTask,
-    &gBlueToothTask,
+    gpBlueToothTask,
     gpLevelTask,
     gpTempTask
 };
@@ -304,12 +238,12 @@ TeakTask *gTasks[] = {
 //------------------------------------------------------------------------------
 void setAdvertising(bool state)
 {
-  if (state) {
-    uBit.bleManager.setTransmitPower(6);
-    uBit.bleManager.ble->setAdvertisingInterval(200);
-    uBit.bleManager.ble->gap().setAdvertisingTimeout(0);
-    uBit.bleManager.ble->gap().startAdvertising();
-  } else {
-    uBit.bleManager.stopAdvertising();
-  }
+    if (state) {
+        uBit.bleManager.setTransmitPower(6);
+        uBit.bleManager.ble->setAdvertisingInterval(200);
+        uBit.bleManager.ble->gap().setAdvertisingTimeout(0);
+        uBit.bleManager.ble->gap().startAdvertising();
+    } else {
+        uBit.bleManager.stopAdvertising();
+    }
 }

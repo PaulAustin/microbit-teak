@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include "TrashbotsController.h"
 
 //------------------------------------------------------------------------------
-// A task for direct control of the motors
+// MotorTask - A task for direct control of the motors
 class MotorTask : public TeakTask {
 public:
     MotorTask();

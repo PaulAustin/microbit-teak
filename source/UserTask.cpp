@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 #include "TeakTask.h"
 
 //------------------------------------------------------------------------------
-// A task for running the users saved program.
+// UserProgramTask - (TODO) A task for running the users saved program.
 // Perhaps there are 2 or 3 programs
 class UserProgramTask : public TeakTask {
 public:
@@ -37,14 +37,13 @@ TeakTask* gpUserProgramTask = &gUserProgramTask;
 UserProgramTask::UserProgramTask()
 {
     m_image = PBMAP(
+        PBMAP_ROW(1, 1, 1, 1, 1),
         PBMAP_ROW(1, 0, 0, 0, 1),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
-        PBMAP_ROW(0, 0, 0, 0, 0),
         PBMAP_ROW(1, 0, 0, 0, 1),
+        PBMAP_ROW(1, 0, 0, 0, 1),
+        PBMAP_ROW(1, 1, 1, 1, 1),
         PBMAP_FRAME_COUNT(1));
 }
-
 
 //------------------------------------------------------------------------------
 // A task to use the built-in level (accelerometer)

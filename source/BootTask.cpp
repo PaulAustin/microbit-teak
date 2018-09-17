@@ -87,6 +87,7 @@ const int bootImages[] __attribute__ ((aligned(4))) = {
   };
 
 //------------------------------------------------------------------------------
+// BootTask - Manage boot up animations sounds.
 // The initial task that starts when the BM boots.
 class BootTask : public TeakTask {
 public:

@@ -25,9 +25,84 @@ DEALINGS IN THE SOFTWARE.
 #include "TeakTask.h"
 
 extern MicroBit uBit;
-extern ScrollTask* gpScrollTask;
 
 //------------------------------------------------------------------------------
+// ScrollTask - A mini task for scrolling from one item to another left or right
+class ScrollTask : public TeakTask {
+public:
+    TaskId Setup(TaskId current, bool toLeft);
+    TaskId Event(MicroBitEvent event);
+public:
+    TaskId  m_next;
+    uint8_t m_step;
+    uint8_t m_toLeft;
+};
+
+ScrollTask gScrollTask;
+TeakTask* gpScrollTask = &gScrollTask;
+
+TaskId ScrollTask::Setup(TaskId current, bool toLeft)
+{
+    m_image = gTasks[current]->PackedImage();
+    if (toLeft) {
+        if (current >= kLastInRing) {
+            m_next = kFirstInRing;
+        } else {
+            m_next = (TaskId) (current + 1);
+        }
+    } else {
+        if (current <= kFirstInRing) {
+          m_next = kLastInRing;
+        } else {
+          m_next = (TaskId) (current - 1);
+        }
+    }
+    m_step = 0;
+    m_toLeft = toLeft;
+    return m_next;
+}
+
+TaskId ScrollTask::Event(MicroBitEvent event)
+{
+    if (event.source != MICROBIT_ID_TIMER)
+        return kSameTask;
+
+//    int imageFrom = gTasks[m_from]->PackedImage();
+    int imageTo = gTasks[m_next]->PackedImage();
+
+    int leftMask = PBMAP(
+        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
+        PBMAP_ROW(1, 0, 0, 0, 0),
+        0);
+
+    int rightMask = PBMAP(
+        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
+        PBMAP_ROW(0, 0, 0, 0, 1), PBMAP_ROW(0, 0, 0, 0, 1),
+        PBMAP_ROW(0, 0, 0, 0, 1),
+        0);
+
+    // In each frame slide From and replace right/left edge with
+    // bits from To frame.
+    if (m_toLeft) {
+        m_image = (m_image << 1) & ~rightMask;
+        if (m_step>0) {
+            m_image = m_image | ((imageTo >> (5-m_step)) & rightMask);
+        }
+    } else {
+        m_image = (m_image >> 1) & ~leftMask;
+        if (m_step>0) {
+            m_image = m_image | ((imageTo << (5-m_step)) & leftMask);
+        }
+    }
+
+    // Advance the animation frame
+    m_step++;
+    return (m_step < 5) ? kSameTask : kTopMenuTask ;
+}
+
+//------------------------------------------------------------------------------
+// TopMenuTask - Manages the top activity menu that can scroll left ot rigth
 class TopMenuTask : public TeakTask {
 public:
     TopMenuTask();
@@ -89,7 +164,6 @@ TaskId TopMenuTask::HighlightLine()
 TaskId TopMenuTask::Event(MicroBitEvent event)
 {
     // Watch for events that are managed independent of state.
-
     // process events that are specific to state.
     switch(m_state) {
     case kTopMenuSwipeIn:
@@ -102,10 +176,10 @@ TaskId TopMenuTask::Event(MicroBitEvent event)
         if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
             m_state = kTopMenuBrowse;
             if (event.source == MICROBIT_ID_BUTTON_A) {
-                m_activeTask = gpScrollTask->Setup(m_activeTask, false);
+                m_activeTask = gScrollTask.Setup(m_activeTask, false);
                 return kScrollTask;
             } else if (event.source == MICROBIT_ID_BUTTON_B) {
-                m_activeTask = gpScrollTask->Setup(m_activeTask, true);
+                m_activeTask = gScrollTask.Setup(m_activeTask, true);
                 return kScrollTask;
             }
         } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
