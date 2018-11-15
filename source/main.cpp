@@ -33,7 +33,6 @@ MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
 MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
-
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -42,7 +41,7 @@ int main()
     spi.format(8, 3);
     spi.frequency(1000000);
 
-    gTaskManager.SetupEventListeners();
+    gTaskManager.Setup();
 
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);

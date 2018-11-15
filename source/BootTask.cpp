@@ -92,34 +92,33 @@ const int bootImages[] __attribute__ ((aligned(4))) = {
 class BootTask : public TeakTask {
 public:
     BootTask();
-    TaskId Event(MicroBitEvent event);
+    void Event(MicroBitEvent event);
 private:
     uint8_t m_frame;
     uint8_t m_delay;
-    uint8_t m_booting;
     enum {
-      kBootDone = 0,
-      kSplashAnimation,
-      kSplashDone,
-      kBotNameScrolling,
+      kTaskIdle = 0,
+      kTaskSplashAnimation,
+      kTaskSplashDone,
+      kTaskScollBotName
     };
 };
 
 BootTask gBootTask;
-BootTask *gpBootTask = &gBootTask;
+TeakTask *gpBootTask = &gBootTask;
 
 BootTask::BootTask()
 {
     m_frame = 0;
     m_delay = PBmapFrameCount(bootImages[m_frame]);
-    m_booting = kSplashAnimation;
+    m_state = kTaskSplashAnimation;
 }
 
-TaskId BootTask::Event(MicroBitEvent event)
+void BootTask::Event(MicroBitEvent event)
 {
     if (event.source == MICROBIT_ID_TIMER) {
-        if (m_booting == kSplashAnimation) {
-            // Truw while the filem is playing.
+        if (m_state == kTaskSplashAnimation) {
+            // True while the film is playing.
             m_image = bootImages[m_frame];
             m_delay--;
             if (m_delay <= 0) {
@@ -128,31 +127,23 @@ TaskId BootTask::Event(MicroBitEvent event)
                 m_delay = PBmapFrameCount(bootImages[m_frame]);
             }
             if (m_delay == 0) {
-                m_booting = kSplashDone;
+                m_state = kTaskSplashDone;
             }
-        }
-        if (m_booting == kSplashDone) {
-            // At end of launch picture, show name
-            char* name = microbit_friendly_name();
-            // Change to all caps in place, crazy stuff.
-            char* upperName = name;
-            for (int i = strlen(name); i ; i--) {
-               *upperName = toupper(*upperName);
-               upperName++;
-            }
-            // Scolling is done in background of
-            // of the main loop.
-            uBit.display.scrollAsync(name, 80);
-            m_booting = kBotNameScrolling;
+        } else if (m_state == kTaskSplashDone) {
+            // Scolling is done in background of of the main loop.
+            // Event wil fire once scrolling is complete.
+            uBit.display.scrollAsync(gTaskManager.BotName(), 70);
+            m_state = kTaskScollBotName;
         }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
         // MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
-        m_booting = kBootDone;
+        // Nothing left to do.
+        m_state = kTaskIdle;
+        gTaskManager.SwitchTo(gpTopMenuTask);
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // A button tap skips to main screen
         uBit.display.stopAnimation();
-        m_booting = kBootDone;
+        m_state = kTaskIdle;
+        gTaskManager.SwitchTo(gpTopMenuTask);
     }
-
-    return (m_booting != kBootDone) ? kSameTask : kTopMenuTask;
 }

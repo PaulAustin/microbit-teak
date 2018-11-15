@@ -43,41 +43,44 @@ int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 
 // Case # 21-05-398
 
-// This order must match the array initializer at the end of TeakTasks.cpp
-enum TaskId : uint8_t {
-    kSameTask = 0,
-    kBootTask,
-    kTopMenuTask,
-    kScrollTask,
-    kFirstInRing, kMotorTask = kFirstInRing,
-    kUserProgramTask,
-    kBlueToothTask,
-    kLevelTask,
-    kTempTask,  kLastInRing = kTempTask
-};
-
 class TeakTask {
 public:
+    int m_state;
     int m_image;
+    TeakTask* m_leftTask;
+    TeakTask* m_rightTask;
+
 public:
+    TeakTask();
+    void SetAdjacentTasks(TeakTask* left, TeakTask* right);
     int PackedImage() { return m_image; };
-    virtual TaskId Event(MicroBitEvent) { return kSameTask; };
+    virtual void Event(MicroBitEvent) { return; };
 };
-extern TeakTask* gTasks[];
 
 // TeakMenu - routs events to the appropriate module
 class TeakTaskManager {
 public:
     TeakTaskManager();
-    void SetupEventListeners();
+    void Setup();
     void MicrobitDalEvent(MicroBitEvent event);
     void MicrobitBtEvent(MicroBitEvent event);
-
-    TeakTask* CurrentTask() { return gTasks[m_currentTask]; };
+    void SwitchTo(TeakTask* task);
+    char* BotName() { return m_name; };
 private:
+    TeakTask* m_currentTask;
+    char m_name[8];
     int m_currentImage = 0;
-    TaskId m_currentTask;
+    bool m_btConnected = false;
 };
+
+extern TeakTask* gpBootTask;
+extern TeakTask* gpEmojiTask;
+extern TeakTask* gpTopMenuTask;
+extern TeakTask* gpMotorTask;
+extern TeakTask* gpBlueToothTask;
+extern TeakTask* gpUserProgramTask;
+extern TeakTask* gpLevelTask;
+extern TeakTask* gpTempTask;
 
 extern TeakTaskManager gTaskManager;
 extern MicroBitUARTServiceFixed *uart;

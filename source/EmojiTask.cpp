@@ -27,59 +27,36 @@ DEALINGS IN THE SOFTWARE.
 
 //------------------------------------------------------------------------------
 // MotorTask - A task for direct control of the motors
-class MotorTask : public TeakTask {
+class EmojiTask : public TeakTask {
 public:
-    MotorTask();
+    EmojiTask();
     void Event(MicroBitEvent event);
 };
-MotorTask gMotorTask;
-TeakTask* gpMotorTask = &gMotorTask;
+EmojiTask gEmojiTask;
+TeakTask* gpEmojiTask = &gEmojiTask;
 
-const int kMotoBase = PBMAP(
+const int kEmojiSmile = PBMAP(
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(1, 0, 1, 0, 1),
-    PBMAP_ROW(0, 1, 0, 1, 0),
     PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_ROW(0, 1, 1, 1, 0),
     PBMAP_FRAME_COUNT(1));
 
-const int kMotorLeftForward  =  PBMAP(PBMAP_ROW(0, 1, 0, 0, 0), 0, 0, 0, 0, 0);
-const int kMotorRightForward =  PBMAP(PBMAP_ROW(0, 0, 0, 1, 0), 0, 0, 0, 0, 0);
-const int kMotorLeftBack     =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 1, 0, 0, 0), 0);
-const int kMotorRightBack    =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 0, 0, 1, 0), 0);
-
-MotorTask::MotorTask()
+EmojiTask::EmojiTask()
 {
-    m_image = kMotoBase;
+    m_image = kEmojiSmile;
 }
 
-bool m1State = false;
-bool m2State = false;
-
-void MotorTask::Event(MicroBitEvent event)
+void EmojiTask::Event(MicroBitEvent event)
 {
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-        m_image = kMotoBase;
+        m_image = kEmojiSmile;
         if (event.source == MICROBIT_ID_BUTTON_A) {
-            m_image |= kMotorLeftForward;
-            SetMotorPower(1, m1State ? 0 : -100);
-            m1State = !m1State;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            m_image |= kMotorRightForward;
-            SetMotorPower(2, m2State ? 0 : 100);
-            m2State = !m2State;
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            m_image |= kMotorLeftForward;
-            m_image |= kMotorRightForward;
         }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-        event.source == MICROBIT_ID_BUTTON_AB) {
-        SetMotorPower(1, 0);
-        SetMotorPower(2, 0);
+    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
     } else if (event.source == MICROBIT_ID_TIMER) {
-        m_image = kMotoBase;
-        if (event.value & 0x08) {
-          m_image &= ~(0x04 << 10);
-        }
     }
 }

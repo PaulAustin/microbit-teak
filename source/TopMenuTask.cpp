@@ -27,48 +27,64 @@ DEALINGS IN THE SOFTWARE.
 extern MicroBit uBit;
 
 //------------------------------------------------------------------------------
-// ScrollTask - A mini task for scrolling from one item to another left or right
-class ScrollTask : public TeakTask {
+// TopMenuTask - Manages the top activity menu that can scroll left ot right
+class TopMenuTask : public TeakTask {
 public:
-    TaskId Setup(TaskId current, bool toLeft);
-    TaskId Event(MicroBitEvent event);
-public:
-    TaskId  m_next;
-    uint8_t m_step;
-    uint8_t m_toLeft;
+    TopMenuTask();
+    void Event(MicroBitEvent event);
+    void SetupScroll(bool toLeft);
+    void Launch();
+    void Scroll();
+    void SwipeIn();
+    void OpenTop();
+    enum {
+      kTopMenuIdle,
+      kTopMenuScrollLeft,
+      kTopMenuScrollRight,
+      kTopMenuSwipeIn,
+      kTopMenuSwipeOut,
+    };
+private:
+    int m_frame;
+    TeakTask* m_focusTask;
+    TeakTask* m_nextTask;
 };
+TopMenuTask gTopMenuTask;
+TeakTask* gpTopMenuTask = &gTopMenuTask;
 
-ScrollTask gScrollTask;
-TeakTask* gpScrollTask = &gScrollTask;
-
-TaskId ScrollTask::Setup(TaskId current, bool toLeft)
+//------------------------------------------------------------------------------
+TopMenuTask::TopMenuTask()
 {
-    m_image = gTasks[current]->PackedImage();
-    if (toLeft) {
-        if (current >= kLastInRing) {
-            m_next = kFirstInRing;
-        } else {
-            m_next = (TaskId) (current + 1);
-        }
-    } else {
-        if (current <= kFirstInRing) {
-          m_next = kLastInRing;
-        } else {
-          m_next = (TaskId) (current - 1);
-        }
-    }
-    m_step = 0;
-    m_toLeft = toLeft;
-    return m_next;
+    m_state = kTopMenuIdle;
+    m_focusTask = gpEmojiTask;
+    m_image = m_focusTask->PackedImage();
 }
 
-TaskId ScrollTask::Event(MicroBitEvent event)
+//------------------------------------------------------------------------------
+void TopMenuTask::SetupScroll(bool toLeft)
 {
-    if (event.source != MICROBIT_ID_TIMER)
-        return kSameTask;
+    m_frame = 0;
 
-//    int imageFrom = gTasks[m_from]->PackedImage();
-    int imageTo = gTasks[m_next]->PackedImage();
+    TeakTask *t = m_focusTask;
+    if (m_state == kTopMenuScrollLeft || m_state == kTopMenuScrollRight) {
+        // If in the midst of scrolling
+        // Assume the first one is finished and start from there.
+        t = m_nextTask;
+    }
+
+    if (toLeft) {
+        m_state = kTopMenuScrollLeft;
+        m_nextTask = t->m_leftTask;
+    } else {
+        m_state = kTopMenuScrollRight;
+        m_nextTask = t->m_rightTask;
+    }
+}
+
+//------------------------------------------------------------------------------
+void TopMenuTask::Scroll()
+{
+    int imageTo = m_nextTask->PackedImage();
 
     int leftMask = PBMAP(
         PBMAP_ROW(1, 0, 0, 0, 0), PBMAP_ROW(1, 0, 0, 0, 0),
@@ -84,113 +100,90 @@ TaskId ScrollTask::Event(MicroBitEvent event)
 
     // In each frame slide From and replace right/left edge with
     // bits from To frame.
-    if (m_toLeft) {
+    if (m_state == kTopMenuScrollLeft) {
         m_image = (m_image << 1) & ~rightMask;
-        if (m_step>0) {
-            m_image = m_image | ((imageTo >> (5-m_step)) & rightMask);
+        if (m_frame > 0) {
+            m_image = m_image | ((imageTo >> (5-m_frame)) & rightMask);
         }
     } else {
         m_image = (m_image >> 1) & ~leftMask;
-        if (m_step>0) {
-            m_image = m_image | ((imageTo << (5-m_step)) & leftMask);
+        if (m_frame > 0) {
+            m_image = m_image | ((imageTo << (5-m_frame)) & leftMask);
         }
     }
 
-    // Advance the animation frame
-    m_step++;
-    return (m_step < 5) ? kSameTask : kTopMenuTask ;
+    // Advance the animation frame, pop to top when done.
+    m_frame++;
+    if (m_frame > 5) {
+        m_state = kTopMenuIdle;
+        m_frame = 0;
+        m_focusTask = m_nextTask;
+        m_nextTask = NULL;
+    }
 }
 
 //------------------------------------------------------------------------------
-// TopMenuTask - Manages the top activity menu that can scroll left ot rigth
-class TopMenuTask : public TeakTask {
-public:
-    TopMenuTask();
-    TaskId Event(MicroBitEvent event);
-    TeakTask* ActiveTask() { return gTasks[m_activeTask]; }
-    TaskId HighlightLine();
-    enum {
-      kTopMenuBrowse,
-      kTopMenuSwipeIn,
-      kTopMenuSwipeOut,
-    };
-public:
-    TaskId m_activeTask;
-    int8_t m_highlightFrame;
-    int8_t m_state;
-};
-TopMenuTask gTopMenuTask;
-TopMenuTask* gpTopMenuTask = &gTopMenuTask;
-
-TopMenuTask::TopMenuTask()
+void TopMenuTask::Launch()
 {
-    m_activeTask = kFirstInRing;
-    m_state = kTopMenuBrowse;
-    m_image = ActiveTask()->PackedImage();
+    m_state = kTopMenuSwipeIn;
+    m_frame = 0;
 }
 
-TaskId TopMenuTask::HighlightLine()
+//------------------------------------------------------------------------------
+void TopMenuTask::OpenTop()
 {
-    m_image = ActiveTask()->PackedImage();
+    m_state = kTopMenuSwipeOut;
+    m_frame = 0;
+}
+//------------------------------------------------------------------------------
+void TopMenuTask::SwipeIn()
+{
     // Animate bar from top or bottom based on state.
-    int offset = (m_state == kTopMenuSwipeIn)
-        ? m_highlightFrame
-        : (4 - m_highlightFrame);
-    int mask = 0x0000001f << (5 * offset);
-    m_image = m_image | mask;
-
-    // Prep for next frame.
-    if (m_highlightFrame < 5) {
-        // Still animatting,
-        m_highlightFrame++;
-        return kSameTask;
+    m_image = m_focusTask->PackedImage();
+    if (m_state == kTopMenuSwipeIn) {
+        m_image = m_image | 0x0000001f << (5 * m_frame);
     } else {
-        // All done, reset the state and frame count.
-        m_highlightFrame = 0;
+        m_image = m_image | (0x0000001f << 20) >> (5 * m_frame);
+    }
+
+    m_frame++;
+    if (m_frame > 5) {
+        m_frame = 0;
         if (m_state == kTopMenuSwipeIn) {
-            // Swipped in the new task, activte it
-            // and leave this teask ready to swipe back in.
-            m_state = kTopMenuSwipeOut;
-            return m_activeTask;
-        } else {
-            // The old task has been swipped out , change the state
-            // and stay with the menu task.
-            m_state = kTopMenuBrowse;
-            return kSameTask;
+            gTaskManager.SwitchTo(m_focusTask);
         }
     }
 }
 
-TaskId TopMenuTask::Event(MicroBitEvent event)
+void TopMenuTask::Event(MicroBitEvent event)
 {
-    // Watch for events that are managed independent of state.
-    // process events that are specific to state.
-    switch(m_state) {
-    case kTopMenuSwipeIn:
-    case kTopMenuSwipeOut:
-        if (event.source == MICROBIT_ID_TIMER) {
-          return HighlightLine();
+    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        // Simple Button Down
+        if (event.source == MICROBIT_ID_BUTTON_A) {
+            this->SetupScroll(true);
+        } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            this->SetupScroll(false);
         }
-        break;
-    case kTopMenuBrowse:
-        if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-            m_state = kTopMenuBrowse;
-            if (event.source == MICROBIT_ID_BUTTON_A) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, false);
-                return kScrollTask;
-            } else if (event.source == MICROBIT_ID_BUTTON_B) {
-                m_activeTask = gScrollTask.Setup(m_activeTask, true);
-                return kScrollTask;
-            }
-        } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
-            if (event.source == MICROBIT_ID_BUTTON_AB) {
-                m_state = kTopMenuSwipeIn;
-                return kSameTask;
-            }
-        } else if (event.source == MICROBIT_ID_TIMER) {
-            m_image = ActiveTask()->PackedImage();
+    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        // Right Button Hold to launch
+        if (event.source == MICROBIT_ID_BUTTON_B) {
+            Launch();
         }
-        break;
+    } else if (event.source == MICROBIT_ID_TIMER) {
+        // Right Button Hold to launch
+        switch(m_state) {
+            case kTopMenuSwipeIn:
+                SwipeIn();
+                break;
+            case kTopMenuScrollLeft:
+            case kTopMenuScrollRight:
+                Scroll();
+                break;
+        }
     }
-    return kSameTask;
+/*
+    else if (event.source == TEAK_TASK_WAKEUP) {
+        OpenTop();
+    }
+    */
 }

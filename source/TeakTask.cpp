@@ -27,83 +27,114 @@ DEALINGS IN THE SOFTWARE.
 
 extern MicroBit uBit;
 
+//------------------------------------------------------------------------------
+// Set up the intial task to be the boot task, this will
+// run the startup screen
+
 /*
 Menu state machines.
 
-up power up. the bot goes though it laucnh picture them into the menu top.
-at that point the A and B button scroll left/tight through top optiopns.
-There wont be many 2-5 options. Its a curculare list so the user can get to any
-in n/2 button taps.
+1. On power up a short animation and initial display of m_name
 
-1. Motor
-2. P1, P2  - user programs
-3. Status  - low level daignostics TBD
-4. Pairing mode.
+2. Top level menu show small set of optipons
+    A - Outputs ( motors)
+    B - Sensors ( three sub option Accelerator, Gyro, Temp)
+    C - User save programs
+
+3. A Special mode for helping establish BT, also shows m_name
+
+The Taskmanager manages all transistion by watching for globally detectable
+events.
+  A-LONG -> Go into/outof BT monitor mode.
+  B-LONG -> Run (from top) or Reset to top
+  A Scroll left in Task
+  B Scroll right in Task
 */
 
 // Images are unpacked or merged in one buffer before
 // being transfered to the main display.
-extern TeakTask *gTasks[];
+//ZZZextern TeakTask *gTasks[];
 TeakTaskManager gTaskManager;
 
 ManagedString eom(";");
 MicroBitUARTServiceFixed *uart;
 
-#if 1
-bool hackConnected = false;
-const int pm_connect = PBMAP(
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(0, 1, 1, 1, 0),
-    PBMAP_ROW(0, 0, 0, 0, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_FRAME_COUNT(1));
+//------------------------------------------------------------------------------
+TeakTask::TeakTask() {
+    m_state = 0;
+    m_image = 0;
+    m_leftTask = NULL;
+    m_rightTask = NULL;
+}
 
-const int pm_disconnect = PBMAP(
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(1, 0, 0, 0, 1),
-    PBMAP_FRAME_COUNT(1));
-
-#endif
-
-TaskId CheckBLEEvents(MicroBitEvent event);
-
-void TeakTaskManager::SetupEventListeners()
+//------------------------------------------------------------------------------
+void TeakTask::SetAdjacentTasks(TeakTask* leftTask, TeakTask* rightTask)
 {
-    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
-    // uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_BLE_EVT_DISCONNECTED, onDisconnected);
-    // End of packet detectd on incomming message
+    m_leftTask = leftTask;
+    m_rightTask = rightTask;
+}
 
+//------------------------------------------------------------------------------
+TeakTaskManager::TeakTaskManager()
+{
+  m_currentTask = NULL;
+}
+
+//------------------------------------------------------------------------------
+void TeakTaskManager::Setup()
+{
+    gpEmojiTask->SetAdjacentTasks(gpMotorTask, gpLevelTask);
+    gpMotorTask->SetAdjacentTasks(gpBlueToothTask, gpEmojiTask);
+    gpBlueToothTask->SetAdjacentTasks(gpLevelTask, gpMotorTask);
+    gpLevelTask->SetAdjacentTasks(gpEmojiTask, gpBlueToothTask);
+
+    // Start with the boot task.
+    SwitchTo(gpBootTask);
+
+    // Connect event listeners
+    uBit.messageBus.listen(MICROBIT_ID_BLE, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
     uBit.messageBus.listen(MICROBIT_ID_BLE_UART, MICROBIT_UART_S_EVT_DELIM_MATCH, this, &TeakTaskManager::MicrobitBtEvent);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_A, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_B, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
     uBit.messageBus.listen(MICROBIT_ID_BUTTON_AB, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
     uBit.messageBus.listen(MICROBIT_ID_DISPLAY, MICROBIT_EVT_ANY, this, &TeakTaskManager::MicrobitDalEvent);
 
+    // Get the micro:bit name and make it upper case for legibility on LEDs
+    strncpy(m_name, microbit_friendly_name(), sizeof(m_name));
+    char* upperName = m_name;
+    for (int i = strlen(m_name); i ; i--) {
+       *upperName = toupper(*upperName);
+       upperName++;
+    }
+
     // Note GATT table size increased from default in MicroBitConfig.h
     // #define MICROBIT_SD_GATT_TABLE_SIZE             0x500
-
     uart = new MicroBitUARTServiceFixed(*uBit.ble, 32, 32);
     uart->eventOn(eom, ASYNC);
 }
 
-TeakTaskManager::TeakTaskManager()
+//------------------------------------------------------------------------------
+void TeakTaskManager::SwitchTo(TeakTask* task)
 {
-    // Start wth the boot task.
-    m_currentTask = kBootTask;
+    m_currentTask = task;
 }
 
+//------------------------------------------------------------------------------
 void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 {
-    TaskId next = CheckBLEEvents(event);
-    if (next != kSameTask) {
-        return;
-    }
-
-    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+    if (event.source == MICROBIT_ID_BLE) {
+        if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
+            m_btConnected = true;
+            uBit.display.print('C');
+        } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
+            m_btConnected = false;
+            uBit.display.print('D');
+        }
+    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        if (event.source == MICROBIT_ID_BUTTON_B) {
+          uBit.display.print('B');
+        }
+    } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
          if (event.source == MICROBIT_ID_BUTTON_A) {
             // uBit.display.print('A');
              uart->send(ManagedString("(a)"));
@@ -116,22 +147,20 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
          }
     }
 
-    // If connected then ignore local menu system.
-    if (hackConnected)
-        return;
+    int newImage = 0;
+    if (m_currentTask != NULL) {
+        m_currentTask->Event(event);
+        newImage = m_currentTask->PackedImage();
+    }
 
-    TaskId nextTask = CurrentTask()->Event(event);
-
-    int newImage = CurrentTask()->PackedImage();
     if (newImage != m_currentImage)  {
+        // If task image has changed the push it to the LEDs
         PBmapUnpack(newImage, uBit.display.image.getBitmap(), uBit.display.image.getWidth());
         m_currentImage = newImage;
     }
-    if (nextTask != kSameTask) {
-        m_currentTask = nextTask;
-    }
 }
 
+//------------------------------------------------------------------------------
 int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 {
     int bits = pbmap;
@@ -167,96 +196,6 @@ int PBmapUnpack(int pbmap, uint8_t* bytes, int width)
 #endif
 
 //------------------------------------------------------------------------------
-// Turn on bluetooth advertising.
-class BlueToothTask : public TeakTask {
-public:
-    BlueToothTask();
-    bool m_advertising;
-    TaskId Event(MicroBitEvent event);
-};
-BlueToothTask gBlueToothTask;
-TeakTask *gpBlueToothTask = &gBlueToothTask;
-
-const int kBluetootBaseImage = PBMAP(
-    PBMAP_ROW(1, 1, 1, 1, 1),
-    PBMAP_ROW(0, 1, 0, 1, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_ROW(0, 0, 1, 0, 0),
-    PBMAP_FRAME_COUNT(1));
-
-BlueToothTask::BlueToothTask()
-{
-    m_image = kBluetootBaseImage;
-}
-
-TaskId BlueToothTask::Event(MicroBitEvent event)
-{
-    if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-        event.source == MICROBIT_ID_BUTTON_AB) {
-        // Turn off the beacon
-        m_advertising = false;
-        setAdvertising(m_advertising);
-        return kTopMenuTask;
-    } else if (event.source == MICROBIT_ID_TIMER) {
-        if (!m_advertising) {
-            m_advertising = true;
-            setAdvertising(m_advertising);
-        }
-        m_image = kBluetootBaseImage;
-        if (event.value & 0x08) {
-            m_image &= ~(0x04 << 10);
-        }
-        // Once connected to it can pop back to the top menu.
-    }
-    return kSameTask;
-}
-
-//------------------------------------------------------------------------------
-TaskId CheckBLEEvents(MicroBitEvent event)
-{
-    // Watch for events that are managed independent of state.
-    if (event.source == MICROBIT_ID_BLE) {
-        if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
-            hackConnected = true;
-            gBlueToothTask.m_image = pm_connect;
-            uBit.display.print('C');
-            return kUserProgramTask;
-        } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
-            hackConnected = false;
-            gBlueToothTask.m_image = pm_disconnect;
-            uBit.display.print('D');
-            return kBlueToothTask;
-        }
-    }
-    return kSameTask;
-};
-
-//------------------------------------------------------------------------------
-// Set up the intial task to be the boot task, this will
-// run the startup screen
-
-extern TeakTask* gpBootTask;
-extern TeakTask* gpTopMenuTask;
-extern TeakTask* gpScrollTask;
-extern TeakTask* gpMotorTask;
-extern TeakTask* gpUserProgramTask;
-extern TeakTask* gpLevelTask;
-extern TeakTask* gpTempTask;
-
-TeakTask *gTasks[] = {
-    (TeakTask*) NULL,
-    gpBootTask,
-    gpTopMenuTask,
-    gpScrollTask,
-    gpMotorTask,
-    gpUserProgramTask,
-    gpBlueToothTask,
-    gpLevelTask,
-    gpTempTask
-};
-
-//------------------------------------------------------------------------------
 void setAdvertising(bool state)
 {
     if (state) {
@@ -269,7 +208,6 @@ void setAdvertising(bool state)
     }
 }
 
-
 //------------------------------------------------------------------------------
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
@@ -281,16 +219,16 @@ void SetMotorPower(int motor, int power)
     return;
 
   if (power > 100) {
-    power = 100;
+      power = 100;
   } else if (power < -100) {
-    power = -100;
+      power = -100;
   }
 
   uBit.io.P16.setDigitalValue(0);
   if (motor == 1) {
-    spi.write(kRM_Motor1Power);
+      spi.write(kRM_Motor1Power);
   } else {
-    spi.write(kRM_Motor2Power);
+      spi.write(kRM_Motor2Power);
   }
   spi.write(power);
   uBit.io.P16.setDigitalValue(1);
@@ -303,6 +241,7 @@ void PlayNote(int solfegeNote) {
   uBit.io.P16.setDigitalValue(1);
 }
 
+#if 0
 void onConnected(MicroBitEvent event )
 {
     // Need to note this in a different way
@@ -318,6 +257,7 @@ void onDisconnected(MicroBitEvent event)
     gTaskManager.MicrobitDalEvent(event);
     return;
 }
+#endif
 
 int hexCharToInt(char c) {
   if ((c >= '0') && (c <= '9')) {
@@ -337,73 +277,73 @@ int pixVal = 1;
 // Called when a delimiter is found.
 void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
 {
-  // If the event was called there should be a message
-  ManagedString buff = uart->readUntil(eom, ASYNC);
-  StringData *s = buff.leakData();
-  // Internal buffer is null terminated as well.
-  //teak::tstring command(s->data);
-  char* str = s->data;
-  int len = strlen(str);
-  int value = 0;
-  // one command to start with, the picture display
-  // P0123456789:
-  // the numebers are hex, the five bits are packed into two hex digits.
-  if ((strncmp(str, "(px:", 4) == 0) && len >= 14) {
-    str += 4;
-    for (int i = 0; i < 5; i++) {
-      char c1 = hexCharToInt(*str);
-      str++;
-      char c2 = hexCharToInt(*str);
-      str++;
-      image.setPixelValue(0, i, c1 & 0x01);
-      image.setPixelValue(1, i, c2 & 0x08);
-      image.setPixelValue(2, i, c2 & 0x04);
-      image.setPixelValue(3, i, c2 & 0x02);
-      image.setPixelValue(4, i, c2 & 0x01);
-    }
-    uBit.display.print(image);
-  } else if ((strncmp(str, "(sr:", 4) == 0) && len >= 5) {
-    str += 4;
-    value = atoi(str);
-    uBit.io.P1.setServoValue(value);
-    uBit.display.scroll("S");
-  } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
-    str += 3;
-    if(strncmp(str, "(1 2)", 5) == 0){
-      if(strncmp(str + 6, "d", 1) == 0){
-        value = atoi(str + 8);
-        SetMotorPower(1, value);
-        SetMotorPower(2, -value);
-      }
-    } else if(strncmp(str, "1", 1) == 0) {
-      if(strncmp(str + 2, "d", 1) == 0) {
+    // If the event was called there should be a message
+    ManagedString buff = uart->readUntil(eom, ASYNC);
+    StringData *s = buff.leakData();
+    // Internal buffer is null terminated as well.
+    //teak::tstring command(s->data);
+    char* str = s->data;
+    int len = strlen(str);
+    int value = 0;
+    // one command to start with, the picture display
+    // P0123456789:
+    // the numebers are hex, the five bits are packed into two hex digits.
+    if ((strncmp(str, "(px:", 4) == 0) && len >= 14) {
+        str += 4;
+        for (int i = 0; i < 5; i++) {
+            char c1 = hexCharToInt(*str);
+            str++;
+            char c2 = hexCharToInt(*str);
+            str++;
+            image.setPixelValue(0, i, c1 & 0x01);
+            image.setPixelValue(1, i, c2 & 0x08);
+            image.setPixelValue(2, i, c2 & 0x04);
+            image.setPixelValue(3, i, c2 & 0x02);
+            image.setPixelValue(4, i, c2 & 0x01);
+        }
+        uBit.display.print(image);
+    } else if ((strncmp(str, "(sr:", 4) == 0) && len >= 5) {
+        str += 4;
+        value = atoi(str);
+        uBit.io.P1.setServoValue(value);
+        uBit.display.scroll("S");
+    } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
+        str += 3;
+        if(strncmp(str, "(1 2)", 5) == 0) {
+            if(strncmp(str + 6, "d", 1) == 0) {
+                value = atoi(str + 8);
+                SetMotorPower(1, value);
+                SetMotorPower(2, -value);
+            }
+        } else if(strncmp(str, "1", 1) == 0) {
+            if(strncmp(str + 2, "d", 1) == 0) {
+                value = atoi(str + 4);
+                SetMotorPower(1, value);
+            }
+        } else if(strncmp(str, "2", 1) == 0) {
+            if(strncmp(str + 2, "d", 1) == 0) {
+                value = atoi(str + 4);
+                SetMotorPower(2, -value);
+            }
+        }
+    } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
+        // Notes come in the form nn where n is the
+        // piano key number
         value = atoi(str + 4);
-        SetMotorPower(1, value);
-      }
-    } else if(strncmp(str, "2", 1) == 0) {
-      if(strncmp(str + 2, "d", 1) == 0) {
+        if (value <= 13) {
+          // early version pay in register0 ( notes 1-12 ( + next C))
+          // bump to C4 (key number 40)
+          value += 39;
+        }
+        PlayNote(value);
+    } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
         value = atoi(str + 4);
-        SetMotorPower(2, -value);
-      }
+        uBit.display.scroll(value);
+    } else if ((strncmp(str, "(stop)", 6) == 0)) {
+        stopAll();
+    } else {
+        uBit.display.scroll(str);
     }
-} else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
-    // Notes come in the form nn where n is the
-    // piano key number
-    value = atoi(str + 4);
-    if (value <= 13) {
-      // early version pay in register0 ( notes 1-12 ( + next C))
-      // bump to C4 (key number 40)
-      value += 39;
-    }
-    PlayNote(value);
-} else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
-    value = atoi(str + 4);
-    uBit.display.scroll(value);
-} else if ((strncmp(str, "(stop)", 6) == 0)) {
-    stopAll();
-} else {
-    uBit.display.scroll(str);
-}
 
-  s->decr();
+    s->decr();
 }
