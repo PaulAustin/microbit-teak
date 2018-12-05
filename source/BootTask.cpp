@@ -94,6 +94,7 @@ public:
     BootTask();
     void Event(MicroBitEvent event);
 private:
+    uint8_t m_state;
     uint8_t m_frame;
     uint8_t m_delay;
     enum {

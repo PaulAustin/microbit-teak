@@ -25,6 +25,8 @@ DEALINGS IN THE SOFTWARE.
 #include "TeakTask.h"
 #include "TrashbotsController.h"
 
+extern MicroBit uBit;
+
 //------------------------------------------------------------------------------
 // MotorTask - A task for direct control of the motors
 class MotorTask : public TeakTask {
@@ -72,10 +74,11 @@ void MotorTask::Event(MicroBitEvent event)
             m_image |= kMotorLeftForward;
             m_image |= kMotorRightForward;
         }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-        event.source == MICROBIT_ID_BUTTON_AB) {
+    } else if (event.source == MICROBIT_ID_TASK_SWAP) {
+        // Shut down an pop to top
         SetMotorPower(1, 0);
         SetMotorPower(2, 0);
+        gTaskManager.SwitchTo(gpTopMenuTask);
     } else if (event.source == MICROBIT_ID_TIMER) {
         m_image = kMotoBase;
         if (event.value & 0x08) {

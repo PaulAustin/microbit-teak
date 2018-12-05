@@ -45,6 +45,7 @@ public:
       kTopMenuSwipeOut,
     };
 private:
+    int m_state;
     int m_frame;
     TeakTask* m_focusTask;
     TeakTask* m_nextTask;
@@ -150,6 +151,7 @@ void TopMenuTask::SwipeIn()
     if (m_frame > 5) {
         m_frame = 0;
         if (m_state == kTopMenuSwipeIn) {
+            m_state = kTopMenuIdle;
             gTaskManager.SwitchTo(m_focusTask);
         }
     }
@@ -160,15 +162,13 @@ void TopMenuTask::Event(MicroBitEvent event)
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // Simple Button Down
         if (event.source == MICROBIT_ID_BUTTON_A) {
-            this->SetupScroll(true);
-        } else if (event.source == MICROBIT_ID_BUTTON_B) {
             this->SetupScroll(false);
+        } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            this->SetupScroll(true);
         }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+    } else if (event.source == MICROBIT_ID_TASK_SWAP ) {
         // Right Button Hold to launch
-        if (event.source == MICROBIT_ID_BUTTON_B) {
-            Launch();
-        }
+        Launch();
     } else if (event.source == MICROBIT_ID_TIMER) {
         // Right Button Hold to launch
         switch(m_state) {
@@ -181,9 +181,4 @@ void TopMenuTask::Event(MicroBitEvent event)
                 break;
         }
     }
-/*
-    else if (event.source == TEAK_TASK_WAKEUP) {
-        OpenTop();
-    }
-    */
 }

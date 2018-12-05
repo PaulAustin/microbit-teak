@@ -61,8 +61,8 @@ MicroBitUARTServiceFixed *uart;
 
 //------------------------------------------------------------------------------
 TeakTask::TeakTask() {
-    m_state = 0;
     m_image = 0;
+    m_asyncImage = false;
     m_leftTask = NULL;
     m_rightTask = NULL;
 }
@@ -83,10 +83,10 @@ TeakTaskManager::TeakTaskManager()
 //------------------------------------------------------------------------------
 void TeakTaskManager::Setup()
 {
-    gpEmojiTask->SetAdjacentTasks(gpMotorTask, gpLevelTask);
+    gpEmojiTask->SetAdjacentTasks(gpMotorTask, gpSensorTask);
     gpMotorTask->SetAdjacentTasks(gpBlueToothTask, gpEmojiTask);
-    gpBlueToothTask->SetAdjacentTasks(gpLevelTask, gpMotorTask);
-    gpLevelTask->SetAdjacentTasks(gpEmojiTask, gpBlueToothTask);
+    gpBlueToothTask->SetAdjacentTasks(gpSensorTask, gpMotorTask);
+    gpSensorTask->SetAdjacentTasks(gpEmojiTask, gpBlueToothTask);
 
     // Start with the boot task.
     SwitchTo(gpBootTask);
@@ -132,31 +132,37 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
         if (event.source == MICROBIT_ID_BUTTON_B) {
-          uBit.display.print('B');
+          // uBit.display.print('G');
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
          if (event.source == MICROBIT_ID_BUTTON_A) {
-            // uBit.display.print('A');
              uart->send(ManagedString("(a)"));
          } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            // uBit.display.print('B');
              uart->send(ManagedString("(b)"));
          } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            // uBit.display.print('AB');
              uart->send(ManagedString("(ab)"));
          }
     }
 
-    int newImage = 0;
     if (m_currentTask != NULL) {
+
+        if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
+            // The Task swap key is treated as a special event
+            event.source = MICROBIT_ID_TASK_SWAP;
+            m_currentTask->Event(event);
+            event.source = MICROBIT_ID_BUTTON_B;
+          }
+
         m_currentTask->Event(event);
-        newImage = m_currentTask->PackedImage();
     }
 
-    if (newImage != m_currentImage)  {
-        // If task image has changed the push it to the LEDs
-        PBmapUnpack(newImage, uBit.display.image.getBitmap(), uBit.display.image.getWidth());
-        m_currentImage = newImage;
+    if (!m_currentTask->AsyncImage()) {
+        int newImage = m_currentTask->PackedImage();
+        if (newImage != m_currentImage) {
+            // If task image has changed the push it to the LEDs
+            PBmapUnpack(newImage, uBit.display.image.getBitmap(), uBit.display.image.getWidth());
+            m_currentImage = newImage;
+        }
     }
 }
 

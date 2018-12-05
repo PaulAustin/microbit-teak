@@ -25,6 +25,8 @@ DEALINGS IN THE SOFTWARE.
 #include "TeakTask.h"
 #include "TrashbotsController.h"
 
+extern MicroBit uBit;
+
 //------------------------------------------------------------------------------
 // BlueToothTask - A task to show more details on the connection, and to allow
 // configure basic settings (e.g. on/off)
@@ -34,6 +36,12 @@ public:
     BlueToothTask();
     bool m_advertising;
     void Event(MicroBitEvent event);
+private:
+    int m_state;
+    enum {
+      kBlueToothIdle,
+      kBotNameScrolling
+    };
 };
 BlueToothTask gBlueToothTask;
 TeakTask *gpBlueToothTask = &gBlueToothTask;
@@ -48,29 +56,23 @@ const int kBluetootBaseImage = PBMAP(
 
 BlueToothTask::BlueToothTask()
 {
+    m_state = kBlueToothIdle;
     m_image = kBluetootBaseImage;
 }
 
 void BlueToothTask::Event(MicroBitEvent event)
 {
-
-#if 0
-if (m_booting == kSplashDone) {
-    // Scolling is done in background of
-    // of the main loop.
-    uBit.display.scrollAsync(gTaskManager.m_name, 80);
-    m_booting = kBotNameScrolling;
-}
-} else if (event.source == MICROBIT_ID_DISPLAY) {
-// MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
-m_booting = kBootDone;
-#endif
-
-    if (event.value == MICROBIT_BUTTON_EVT_HOLD &&
-        event.source == MICROBIT_ID_BUTTON_AB) {
+    if (event.source == MICROBIT_ID_BUTTON_B) {
+        uBit.display.scrollAsync(gTaskManager.BotName(), 80);
+        m_state = kBotNameScrolling;
+        m_asyncImage = true;
         // Turn off the beacon
-        m_advertising = false;
-        setAdvertising(m_advertising);
+        // m_advertising = false;
+        // setAdvertising(m_advertising);
+    } else if (event.source == MICROBIT_ID_DISPLAY) {
+        // MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
+        m_state = kBlueToothIdle;
+        m_asyncImage = false;
     } else if (event.source == MICROBIT_ID_TIMER) {
         if (!m_advertising) {
             m_advertising = true;
@@ -78,8 +80,11 @@ m_booting = kBootDone;
         }
         m_image = kBluetootBaseImage;
         if (event.value & 0x08) {
-            m_image &= ~(0x04 << 10);
+            m_image &= ~(0x04);
         }
         // Once connected to it can pop back to the top menu.
+    } else if (event.source == MICROBIT_ID_TASK_SWAP) {
+        // Shut down an pop to top
+        gTaskManager.SwitchTo(gpTopMenuTask);
     }
 }

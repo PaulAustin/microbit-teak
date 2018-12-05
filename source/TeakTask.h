@@ -40,13 +40,15 @@ int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 
 // Adding a new event source
 #define MICROBIT_ID_TIMER 512
+#define MICROBIT_ID_TASK_SWAP 513
 
 // Case # 21-05-398
 
 class TeakTask {
 public:
-    int m_state;
+//    int m_state;
     int m_image;
+    bool m_asyncImage;
     TeakTask* m_leftTask;
     TeakTask* m_rightTask;
 
@@ -54,6 +56,7 @@ public:
     TeakTask();
     void SetAdjacentTasks(TeakTask* left, TeakTask* right);
     int PackedImage() { return m_image; };
+    bool AsyncImage() { return m_asyncImage; };
     virtual void Event(MicroBitEvent) { return; };
 };
 
@@ -79,7 +82,7 @@ extern TeakTask* gpTopMenuTask;
 extern TeakTask* gpMotorTask;
 extern TeakTask* gpBlueToothTask;
 extern TeakTask* gpUserProgramTask;
-extern TeakTask* gpLevelTask;
+extern TeakTask* gpSensorTask;
 extern TeakTask* gpTempTask;
 
 extern TeakTaskManager gTaskManager;
