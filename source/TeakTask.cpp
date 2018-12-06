@@ -145,7 +145,6 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
     }
 
     if (m_currentTask != NULL) {
-
         if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
             // The Task swap key is treated as a special event
             event.source = MICROBIT_ID_TASK_SWAP;
@@ -240,30 +239,14 @@ void SetMotorPower(int motor, int power)
   uBit.io.P16.setDigitalValue(1);
 }
 
-void PlayNote(int solfegeNote) {
+void PlayNote(int solfegeNote, int duration) {
   uBit.io.P16.setDigitalValue(0);
+  spi.write(kRM_NoteLength);
+  spi.write(duration);
   spi.write(kRM_NoteSolfege);
   spi.write(solfegeNote);
   uBit.io.P16.setDigitalValue(1);
 }
-
-#if 0
-void onConnected(MicroBitEvent event )
-{
-    // Need to note this in a different way
-    uBit.display.print('C');
-    gTaskManager.MicrobitDalEvent(event);
-    return;
-}
-
-void onDisconnected(MicroBitEvent event)
-{
-   // Need to note this in a different way
-    uBit.display.print('D');
-    gTaskManager.MicrobitDalEvent(event);
-    return;
-}
-#endif
 
 int hexCharToInt(char c) {
   if ((c >= '0') && (c <= '9')) {
@@ -341,7 +324,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
           // bump to C4 (key number 40)
           value += 39;
         }
-        PlayNote(value);
+        PlayNote(value, 64);
     } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
         value = atoi(str + 4);
         uBit.display.scroll(value);
@@ -350,6 +333,5 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
     } else {
         uBit.display.scroll(str);
     }
-
     s->decr();
 }

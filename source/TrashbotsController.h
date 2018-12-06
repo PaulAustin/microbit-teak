@@ -81,7 +81,7 @@ enum RegMap_t
 extern SPI spi;
 
 void TBCInit();
-void PlayNote(int value, int octave);
+void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();
 

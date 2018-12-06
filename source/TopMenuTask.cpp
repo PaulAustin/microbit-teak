@@ -23,6 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
+#include "TrashbotsController.h"
 
 extern MicroBit uBit;
 
@@ -162,8 +163,10 @@ void TopMenuTask::Event(MicroBitEvent event)
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // Simple Button Down
         if (event.source == MICROBIT_ID_BUTTON_A) {
+            PlayNote(40, 32);
             this->SetupScroll(false);
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
+            PlayNote(42, 32);
             this->SetupScroll(true);
         }
     } else if (event.source == MICROBIT_ID_TASK_SWAP ) {

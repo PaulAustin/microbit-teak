@@ -108,16 +108,19 @@ void SensorTask::SelectSensor(int index)
     m_image = sensorImages[index];
 }
 
+
 void SensorTask::Event(MicroBitEvent event)
 {
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         if (event.source == MICROBIT_ID_BUTTON_A) {
+          PlayNote(40, 32);
           if (m_sensor > kSensorFirst) {
             m_sensor -= 1;
           } else {
             m_sensor = kSensorLast;
           }
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
+          PlayNote(48, 32);
           if (m_sensor < kSensorLast) {
             m_sensor += 1;
           } else {
