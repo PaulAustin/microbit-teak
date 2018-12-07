@@ -105,6 +105,7 @@ SensorTask::SensorTask()
 
 void SensorTask::SelectSensor(int index)
 {
+    m_note = ksNoteE4;
     m_image = sensorImages[index];
 }
 

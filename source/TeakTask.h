@@ -46,11 +46,11 @@ int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 
 class TeakTask {
 public:
-//    int m_state;
     int m_image;
     bool m_asyncImage;
     TeakTask* m_leftTask;
     TeakTask* m_rightTask;
+    int m_note;
 
 public:
     TeakTask();

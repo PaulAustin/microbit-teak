@@ -23,6 +23,29 @@ DEALINGS IN THE SOFTWARE.
 #ifndef TRASHBOTS_CONTROLLER_SERVICE_H
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
+enum SolfegeNotes{
+	kSNoteRest,
+
+	ksNoteA3 = 37,
+	ksNoteASharp3 = 38,
+	ksNoteB3 = 39,
+	ksNoteC4 = 40,
+	ksNoteD4 = 42,
+	ksNoteE4 = 44,
+	ksNoteF4 = 45,
+	ksNoteG4 = 47,
+	ksNoteA5 = 49,
+	ksNoteB5 = 51,
+	ksNoteC5 = 52,
+	ksNoteD5 = 54,
+	ksNoteE5 = 56,
+	ksNoteF5 = 57,
+	ksNoteA6 = 59,
+	ksNoteB6 = 61,
+	ksNoteC6 = 62,
+};
+
+
 enum RegMap_t
 {
 	kRM_SystemFMVers1 = 1,

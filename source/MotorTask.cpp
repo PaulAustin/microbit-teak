@@ -52,6 +52,7 @@ const int kMotorRightBack    =  PBMAP(0, 0, 0, 0, PBMAP_ROW(0, 0, 0, 1, 0), 0);
 
 MotorTask::MotorTask()
 {
+    m_note = ksNoteC4;
     m_image = kMotoBase;
 }
 

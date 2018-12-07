@@ -45,6 +45,7 @@ const int kEmojiSmile = PBMAP(
 
 EmojiTask::EmojiTask()
 {
+    m_note = ksNoteF4;
     m_image = kEmojiSmile;
 }
 

@@ -81,6 +81,8 @@ void TopMenuTask::SetupScroll(bool toLeft)
         m_state = kTopMenuScrollRight;
         m_nextTask = t->m_rightTask;
     }
+
+    PlayNote(m_nextTask->m_note, 32);
 }
 
 //------------------------------------------------------------------------------
@@ -163,10 +165,10 @@ void TopMenuTask::Event(MicroBitEvent event)
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // Simple Button Down
         if (event.source == MICROBIT_ID_BUTTON_A) {
-            PlayNote(40, 32);
+            // PlayNote(40, 32);
             this->SetupScroll(false);
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            PlayNote(42, 32);
+            // PlayNote(42, 32);
             this->SetupScroll(true);
         }
     } else if (event.source == MICROBIT_ID_TASK_SWAP ) {

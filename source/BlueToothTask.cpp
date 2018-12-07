@@ -56,6 +56,7 @@ const int kBluetootBaseImage = PBMAP(
 
 BlueToothTask::BlueToothTask()
 {
+    m_note = ksNoteD4;
     m_state = kBlueToothIdle;
     m_image = kBluetootBaseImage;
 }
