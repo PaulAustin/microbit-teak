@@ -24,7 +24,7 @@ DEALINGS IN THE SOFTWARE.
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
 enum SolfegeNotes{
-	kSNoteRest,
+	ksNoteRest,
 	ksNoteA3 = 37,
 	ksNoteASharp3 = 38,
 	ksNoteB3 = 39,
@@ -39,20 +39,33 @@ enum SolfegeNotes{
 	ksNoteD5 = 54,
 	ksNoteE5 = 56,
 	ksNoteF5 = 57,
-	ksNoteA6 = 59,
-	ksNoteB6 = 61,
-	ksNoteC6 = 62,
-	ksNoteD6 = 64,
-	ksNoteE6 = 66,
-	ksNoteF6 = 67,
-	ksNoteA7 = 69,
-	ksNoteB7 = 71,
-	ksNoteC7 = 72,
-	ksNoteD7 = 74,
-	ksNoteE7 = 76,
-	ksNoteF7 = 77,
-	ksNoteA8 = 79,
-	ksNoteB8 = 81,
+	ksNoteG5 = 57,  // oo
+	ksNoteGS5 = 58,  // oo
+	ksNoteA6  = 59,
+	ksNoteAS6 = 60,
+	ksNoteB6 	= 61,
+	ksNoteC6 	= 62,
+	ksNoteCS6 = 63,
+	ksNoteD6 	= 64,
+	ksNoteDS6 = 65,
+	ksNoteE6 	= 66,
+	ksNoteF6 	= 67,
+	ksNoteFS6 = 68,
+	ksNoteG6 	= 69,
+	ksNoteGS6 = 70,
+	ksNoteA7 	= 71,
+	ksNoteAS7 = 72,
+	ksNoteB7 	= 73,
+	ksNoteC7 = 74,
+	ksNoteD7 = 76,
+	ksNoteE7 = 78,
+	ksNoteF7 = 79,
+	ksNoteG7 = 81,
+	ksNoteA8 = 82,
+	ksNoteB8 = 84,
+	ksNoteC8 = 85,
+	ksNoteD8 = 87,
+	ksNoteE8 = 89,
 
 	// Other code for a Note stream
 	ksNoteL0 = 100,		// Sets last note but does play it.
@@ -134,7 +147,8 @@ enum RegMap_t
 extern SPI spi;
 
 void TBCInit();
-void PlayNoteAsync(int value, int duration);
+void PlayNoteAsync(int* value);
+void PlayNoteAsync(int value);
 void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();

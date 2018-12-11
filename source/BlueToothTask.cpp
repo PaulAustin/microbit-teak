@@ -61,12 +61,50 @@ BlueToothTask::BlueToothTask()
     m_image = kBluetootBaseImage;
 }
 
+char barnio[]= {
+  ksNoteL8th,
+  ksNoteE6,ksNoteE6,ksNoteRest,ksNoteE6,
+  ksNoteRest, ksNoteC6, ksNoteE6, ksNoteRest,
+  ksNoteG6, ksNoteRest, ksNoteRest, ksNoteRest,
+  ksNoteG5, ksNoteRest, ksNoteRest, ksNoteRest,
+
+  ksNoteC7, ksNoteRest, ksNoteRest, ksNoteG6,
+  ksNoteRest, ksNoteRest, ksNoteE6, ksNoteRest,
+  ksNoteA6, ksNoteRest, ksNoteB6, ksNoteRest,
+  ksNoteRest, ksNoteAS6, ksNoteA6, ksNoteRest,
+
+};
+
 void BlueToothTask::Event(MicroBitEvent event)
 {
-    if (event.source == MICROBIT_ID_BUTTON_B) {
+    if (event.source == MICROBIT_ID_BUTTON_A && event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        PlayNoteAsync(ksNoteL8th);
+
+        PlayNoteAsync(ksNoteE6);
+        PlayNoteAsync(ksNoteE6);
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteE6);
+
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteC6);
+        PlayNoteAsync(ksNoteE6);
+        PlayNoteAsync(ksNoteRest);
+
+        PlayNoteAsync(ksNoteG6);
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteRest);
+
+        PlayNoteAsync(ksNoteG5);
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteRest);
+        PlayNoteAsync(ksNoteRest);
+
+    } else if (event.source == MICROBIT_ID_BUTTON_B) {
         uBit.display.scrollAsync(gTaskManager.BotName(), 80);
         m_state = kBotNameScrolling;
         m_asyncImage = true;
+
         // Turn off the beacon
         // m_advertising = false;
         // setAdvertising(m_advertising);
