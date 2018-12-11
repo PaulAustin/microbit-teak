@@ -47,14 +47,15 @@ int main()
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
     int tickCount = 0;
 
-    PlayNoteAsync(ksNoteC4, 16);
-    PlayNoteAsync(ksNoteD4, 16);
-    PlayNoteAsync(ksNoteE4, 16);
-    PlayNoteAsync(ksNoteF4, 16);
-    PlayNoteAsync(ksNoteG4, 16);
-    PlayNoteAsync(ksNoteA5, 16);
-    PlayNoteAsync(ksNoteB5, 16);
-    PlayNoteAsync(ksNoteC5, 16);
+    PlayNoteAsync(ksNoteL8th);
+    PlayNoteAsync(ksNoteC4);
+    PlayNoteAsync(ksNoteD4);
+    PlayNoteAsync(ksNoteE4);
+    PlayNoteAsync(ksNoteF4);
+    PlayNoteAsync(ksNoteG4);
+    PlayNoteAsync(ksNoteA5);
+    PlayNoteAsync(ksNoteB5);
+    PlayNoteAsync(ksNoteC5);
 
     while(1) {
         tickCount++;
