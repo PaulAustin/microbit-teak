@@ -25,7 +25,6 @@ DEALINGS IN THE SOFTWARE.
 
 enum SolfegeNotes{
 	kSNoteRest,
-
 	ksNoteA3 = 37,
 	ksNoteASharp3 = 38,
 	ksNoteB3 = 39,
@@ -43,6 +42,36 @@ enum SolfegeNotes{
 	ksNoteA6 = 59,
 	ksNoteB6 = 61,
 	ksNoteC6 = 62,
+	ksNoteD6 = 64,
+	ksNoteE6 = 66,
+	ksNoteF6 = 67,
+	ksNoteA7 = 69,
+	ksNoteB7 = 71,
+	ksNoteC7 = 72,
+	ksNoteD7 = 74,
+	ksNoteE7 = 76,
+	ksNoteF7 = 77,
+	ksNoteA8 = 79,
+	ksNoteB8 = 81,
+
+	// Other code for a Note stream
+	ksNoteL0 = 100,		// Sets last note but does play it.
+	ksNoteL16th,
+	ksNoteL8th,
+	ksNoteL4th,
+	ksNoteLHalf,
+	ksNoteLWhole,
+	ksNoteLTriplet,  	// Note length is 1/3 twice the current
+	ksNoteLDot,			// Note length is lengthened by 1/2
+	ksNoteLFermata,  	// Note length is doubled
+
+	// Envelope modifiers
+	ksNoteStacatto = 110,
+	ksNoteLagatto,
+	ksNoteGlissando,	// Pitch Blend from last note.
+	ksNoteSetKey,		// All notes will be relative to the new key.
+	ksNoteSetTempo,		// In BPM
+
 };
 
 
@@ -90,6 +119,7 @@ enum RegMap_t
 	kRM_NoteLength 		= 61,
 	kRM_NoteSolfege 	= 62,	// piano key 1-88
 	kRM_NoteHertz 		= 63,	// 0-14k??
+	kRM_NoteStream 		= 66,	// 0-14k??
 
 	kRM_Gpio 			= 70,	    // BIT FIELD
 	kRM_Gpio1 			= 71,	    // individual bits
@@ -104,6 +134,7 @@ enum RegMap_t
 extern SPI spi;
 
 void TBCInit();
+void PlayNoteAsync(int value, int duration);
 void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();

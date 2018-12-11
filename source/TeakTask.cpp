@@ -248,6 +248,14 @@ void PlayNote(int solfegeNote, int duration) {
   uBit.io.P16.setDigitalValue(1);
 }
 
+void PlayNoteAsync(int solfegeNote, int duration) {
+  // Put a note in ote stream.
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(kRM_NoteStream);
+  spi.write(solfegeNote);
+  uBit.io.P16.setDigitalValue(1);
+}
+
 int hexCharToInt(char c) {
   if ((c >= '0') && (c <= '9')) {
     return c - '0';

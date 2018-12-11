@@ -47,6 +47,15 @@ int main()
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
     int tickCount = 0;
 
+    PlayNoteAsync(ksNoteC4, 16);
+    PlayNoteAsync(ksNoteD4, 16);
+    PlayNoteAsync(ksNoteE4, 16);
+    PlayNoteAsync(ksNoteF4, 16);
+    PlayNoteAsync(ksNoteG4, 16);
+    PlayNoteAsync(ksNoteA5, 16);
+    PlayNoteAsync(ksNoteB5, 16);
+    PlayNoteAsync(ksNoteC5, 16);
+
     while(1) {
         tickCount++;
         fiber_sleep(50);

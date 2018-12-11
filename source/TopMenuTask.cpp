@@ -82,7 +82,7 @@ void TopMenuTask::SetupScroll(bool toLeft)
         m_nextTask = t->m_rightTask;
     }
 
-    PlayNote(m_nextTask->m_note, 32);
+    PlayNote(m_nextTask->m_note, 64);
 }
 
 //------------------------------------------------------------------------------
