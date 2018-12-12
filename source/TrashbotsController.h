@@ -24,67 +24,128 @@ DEALINGS IN THE SOFTWARE.
 #define TRASHBOTS_CONTROLLER_SERVICE_H
 
 enum SolfegeNotes{
-	ksNoteRest,
-	ksNoteA3 = 37,
-	ksNoteASharp3 = 38,
-	ksNoteB3 = 39,
-	ksNoteC4 = 40,
-	ksNoteD4 = 42,
-	ksNoteE4 = 44,
-	ksNoteF4 = 45,
-	ksNoteG4 = 47,
-	ksNoteA5 = 49,
-	ksNoteB5 = 51,
-	ksNoteC5 = 52,
-	ksNoteD5 = 54,
-	ksNoteE5 = 56,
-	ksNoteF5 = 57,
-	ksNoteG5 = 57,  // oo
-	ksNoteGS5 = 58,  // oo
-	ksNoteA6  = 59,
-	ksNoteAS6 = 60,
-	ksNoteB6 	= 61,
-	ksNoteC6 	= 62,
-	ksNoteCS6 = 63,
-	ksNoteD6 	= 64,
-	ksNoteDS6 = 65,
-	ksNoteE6 	= 66,
-	ksNoteF6 	= 67,
-	ksNoteFS6 = 68,
-	ksNoteG6 	= 69,
-	ksNoteGS6 = 70,
-	ksNoteA7 	= 71,
-	ksNoteAS7 = 72,
-	ksNoteB7 	= 73,
-	ksNoteC7 = 74,
-	ksNoteD7 = 76,
-	ksNoteE7 = 78,
-	ksNoteF7 = 79,
-	ksNoteG7 = 81,
-	ksNoteA8 = 82,
-	ksNoteB8 = 84,
-	ksNoteC8 = 85,
-	ksNoteD8 = 87,
-	ksNoteE8 = 89,
+		ksNoteRest= 0,
+		ksNoteA0 	= 1,	 	// Octave 0
+		ksNoteAS0 = 2,
+		ksNoteB0	= 3,
+		ksNoteC0 	= 4,
+		ksNoteCS0 = 5,
+		ksNoteD0 	= 6,
+		ksNoteDS0 = 7,
+		ksNoteE0 	= 8,
+		ksNoteF0 	= 9,
+		ksNoteFS0 = 10,
+		ksNoteG0 	= 11,
+		ksNoteGS0 = 12,
+		ksNoteA1 	= 13,		// Octave 1
+		ksNoteAS1 = 14,
+		ksNoteB1	= 15,
+		ksNoteC1 	= 16,
+		ksNoteCS1 = 17,
+		ksNoteD1 	= 18,
+		ksNoteDS1 = 19,
+		ksNoteE1 	= 20,
+		ksNoteF1 	= 21,
+		ksNoteFS1 = 22,
+		ksNoteG1 	= 23,
+		ksNoteGS1 = 24,
+		ksNoteA2 	= 25,		// Octave 2
+		ksNoteAS2 = 26,
+		ksNoteB2	= 27,
+		ksNoteC2 	= 28,
+		ksNoteCS2 = 29,
+		ksNoteD2 	= 30,
+		ksNoteDS2 = 31,
+		ksNoteE2 	= 32,
+		ksNoteF2 	= 33,
+		ksNoteFS2 = 34,
+		ksNoteG2 	= 35,
+		ksNoteGS2 = 36,
+		ksNoteA3 	= 25,		// Octave 1
+		ksNoteAS3 = 26,
+		ksNoteB3 	= 27,
+		ksNoteC3 	= 28,
+		ksNoteCS3 = 29,
+		ksNoteD3 	= 30,
+		ksNoteDS3 = 31,
+		ksNoteE3 	= 32,
+		ksNoteF3 	= 33,
+		ksNoteFS3 = 34,
+		ksNoteG3 	= 35,
+		ksNoteGS3 = 36,
+		ksNoteA4 	= 37,		// Octave 4
+		ksNoteAS4 = 38,
+		ksNoteB4 	= 39,
+		ksNoteC4 	= 40,
+		ksNoteCS4 = 41,
+		ksNoteD4 	= 42,
+		ksNoteDS4 = 43,
+		ksNoteE4 	= 44,
+		ksNoteF4 	= 45,
+		ksNoteFS4 = 46,
+		ksNoteG4 	= 47,
+		ksNoteGS4 = 48,
+		ksNoteA5 	= 49,
+		ksNoteAS5 = 50,
+		ksNoteB5 	= 51,
+		ksNoteC5 	= 52,		// Octave 5
+		ksNoteCS5 = 53,
+		ksNoteD5 	= 54,
+		ksNoteDS5 = 55,
+		ksNoteE5 	= 56,
+		ksNoteF5 	= 57,
+		ksNoteFS5 = 58,
+		ksNoteG5 	= 59,
+		ksNoteGS5 = 60,
+		ksNoteA6  = 61,		// Octave 6
+		ksNoteAS6 = 62,
+		ksNoteB6 	= 63,
+		ksNoteC6 	= 64,
+		ksNoteCS6 = 65,
+		ksNoteD6 	= 66,
+		ksNoteDS6 = 67,
+		ksNoteE6 	= 68,
+		ksNoteF6 	= 69,
+		ksNoteFS6 = 70,
+		ksNoteG6 	= 71,
+		ksNoteGS6 = 72,
+		ksNoteA7 	= 73,		// Octave 7
+		ksNoteAS7 = 74,
+		ksNoteB7 	= 75,
+		ksNoteC7 	= 76,
+		ksNoteCS7 = 77,
+		ksNoteD7 	= 78,
+		ksNoteDS7 = 79,
+		ksNoteE7 	= 80,
+		ksNoteF7  = 81,
+		ksNoteFS7 = 82,
+		ksNoteG7 	= 83,
+		ksNoteGS7 = 84,
+		ksNoteA8 	= 85,		// Octave 8`
+		ksNoteAS8 = 86,
+		ksNoteB8 	= 87,
+		ksNoteC8 	= 88,
 
-	// Other code for a Note stream
-	ksNoteL0 = 100,		// Sets last note but does play it.
-	ksNoteL16th,
-	ksNoteL8th,
-	ksNoteL4th,
-	ksNoteLHalf,
-	ksNoteLWhole,
-	ksNoteLTriplet,  	// Note length is 1/3 twice the current
-	ksNoteLDot,			// Note length is lengthened by 1/2
-	ksNoteLFermata,  	// Note length is doubled
+		// Additional codes for a note stream
+		ksNoteL0 = 100,		// Sets last note but does play it.
+		ksNoteL32nd,
+		ksNoteL16th,
+		ksNoteL8th,
+		ksNoteL4th,
+		ksNoteLHalf,
+		ksNoteLWhole,
+		ksNoteLTriplet,  	// Note length is 1/3 twice the current
+		ksNoteLDot,				// Note length is lengthened by 1/2
+		ksNoteLFermata,  	// Note length is doubled
 
-	// Envelope modifiers
-	ksNoteStacatto = 110,
-	ksNoteLagatto,
-	ksNoteGlissando,	// Pitch Blend from last note.
-	ksNoteSetKey,		// All notes will be relative to the new key.
-	ksNoteSetTempo,		// In BPM
+		// Envelope modifiers
+		ksNoteEStacatto = 110,
+		ksNoteELagatto,
+		ksNoteEDiatonicTrillo,
+		ksNoteEGlissando,	// Pitch Blend from last note.
 
+		ksNoteSetKey,			// All notes will be relative to the new key.
+		ksNoteSetTempo,		// In BPM
 };
 
 
@@ -147,8 +208,8 @@ enum RegMap_t
 extern SPI spi;
 
 void TBCInit();
-void PlayNoteAsync(int* value);
-void PlayNoteAsync(int value);
+void PlayNoteStream(const char* value, int length);
+void PlayNoteStream(char value);
 void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();

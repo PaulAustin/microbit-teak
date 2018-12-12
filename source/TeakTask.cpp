@@ -248,11 +248,21 @@ void PlayNote(int solfegeNote, int duration) {
   uBit.io.P16.setDigitalValue(1);
 }
 
-void PlayNoteAsync(int solfegeNote) {
-  // Put a note in ote stream.
+void PlayNoteStream(char streamOpCode) {
+  // Put a note opcode in the stream.
   uBit.io.P16.setDigitalValue(0);
   spi.write(kRM_NoteStream);
-  spi.write(solfegeNote);
+  spi.write(streamOpCode);
+  uBit.io.P16.setDigitalValue(1);
+}
+
+void PlayNoteStream(const char* streamOpCode, int length) {
+  // Put a note in ote stream.
+  uBit.io.P16.setDigitalValue(0);
+  for ( int i = 0; i < length; i++ ) {
+    spi.write(kRM_NoteStream);
+    spi.write(streamOpCode[i]);
+  }
   uBit.io.P16.setDigitalValue(1);
 }
 

@@ -61,44 +61,41 @@ BlueToothTask::BlueToothTask()
     m_image = kBluetootBaseImage;
 }
 
-char barnio[]= {
+const char barnio[]= {
   ksNoteL8th,
+
   ksNoteE6,ksNoteE6,ksNoteRest,ksNoteE6,
   ksNoteRest, ksNoteC6, ksNoteE6, ksNoteRest,
   ksNoteG6, ksNoteRest, ksNoteRest, ksNoteRest,
   ksNoteG5, ksNoteRest, ksNoteRest, ksNoteRest,
 
-  ksNoteC7, ksNoteRest, ksNoteRest, ksNoteG6,
-  ksNoteRest, ksNoteRest, ksNoteE6, ksNoteRest,
-  ksNoteA6, ksNoteRest, ksNoteB6, ksNoteRest,
-  ksNoteRest, ksNoteAS6, ksNoteA6, ksNoteRest,
+  ksNoteC6, ksNoteRest, ksNoteRest, ksNoteG5,
+  ksNoteRest, ksNoteRest, ksNoteE5, ksNoteRest,
+  ksNoteA5, ksNoteRest, ksNoteB5, ksNoteRest,
+  ksNoteRest, ksNoteAS5, ksNoteA5, ksNoteRest,
+
+  ksNoteG5, ksNoteE6, ksNoteG6,
+  ksNoteA6, ksNoteRest, ksNoteF6, ksNoteG6,
+  ksNoteRest, ksNoteE6, ksNoteRest, ksNoteC6,
+  ksNoteD6, ksNoteB5, ksNoteRest, ksNoteRest,
+
+  ksNoteC6, ksNoteRest, ksNoteRest, ksNoteG5,
+  ksNoteRest, ksNoteRest, ksNoteE5, ksNoteRest,
+  ksNoteRest, ksNoteA5, ksNoteRest, ksNoteB5,
+  ksNoteRest, ksNoteAS5, ksNoteA5, ksNoteRest,
+
+  ksNoteG5, ksNoteE6, ksNoteG6,
+  ksNoteA6, ksNoteRest, ksNoteF6, ksNoteG6,
+  ksNoteRest, ksNoteE6, ksNoteRest, ksNoteC6,
+  ksNoteD6, ksNoteB5, ksNoteRest, ksNoteRest
 
 };
 
 void BlueToothTask::Event(MicroBitEvent event)
 {
     if (event.source == MICROBIT_ID_BUTTON_A && event.value == MICROBIT_BUTTON_EVT_CLICK) {
-        PlayNoteAsync(ksNoteL8th);
 
-        PlayNoteAsync(ksNoteE6);
-        PlayNoteAsync(ksNoteE6);
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteE6);
-
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteC6);
-        PlayNoteAsync(ksNoteE6);
-        PlayNoteAsync(ksNoteRest);
-
-        PlayNoteAsync(ksNoteG6);
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteRest);
-
-        PlayNoteAsync(ksNoteG5);
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteRest);
-        PlayNoteAsync(ksNoteRest);
+        PlayNoteStream(barnio, sizeof(barnio));
 
     } else if (event.source == MICROBIT_ID_BUTTON_B) {
         uBit.display.scrollAsync(gTaskManager.BotName(), 80);
