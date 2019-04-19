@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
-#include "TrashbotsController.h"
+#include "TBCDriver.h"
 
 extern MicroBit uBit;
 

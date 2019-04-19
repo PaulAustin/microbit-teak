@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
-#include "TrashbotsController.h"
+#include "TBCDriver.h"
 
 extern MicroBit uBit;
 
@@ -217,54 +217,6 @@ void setAdvertising(bool state)
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
 SPI spi(MOSI, MISO, SCK);
-
-void SetMotorPower(int motor, int power)
-{
-  if (motor < 1 || motor > 2)
-    return;
-
-  if (power > 100) {
-      power = 100;
-  } else if (power < -100) {
-      power = -100;
-  }
-
-  uBit.io.P16.setDigitalValue(0);
-  if (motor == 1) {
-      spi.write(kRM_Motor1Power);
-  } else {
-      spi.write(kRM_Motor2Power);
-  }
-  spi.write(power);
-  uBit.io.P16.setDigitalValue(1);
-}
-
-void PlayNote(int solfegeNote, int duration) {
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(kRM_NoteLength);
-  spi.write(duration);
-  spi.write(kRM_NoteSolfege);
-  spi.write(solfegeNote);
-  uBit.io.P16.setDigitalValue(1);
-}
-
-void PlayNoteStream(char streamOpCode) {
-  // Put a note opcode in the stream.
-  uBit.io.P16.setDigitalValue(0);
-  spi.write(kRM_NoteStream);
-  spi.write(streamOpCode);
-  uBit.io.P16.setDigitalValue(1);
-}
-
-void PlayNoteStream(const char* streamOpCode, int length) {
-  // Put a note in ote stream.
-  uBit.io.P16.setDigitalValue(0);
-  for ( int i = 0; i < length; i++ ) {
-    spi.write(kRM_NoteStream);
-    spi.write(streamOpCode[i]);
-  }
-  uBit.io.P16.setDigitalValue(1);
-}
 
 int hexCharToInt(char c) {
   if ((c >= '0') && (c <= '9')) {

@@ -23,7 +23,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
-#include "TrashbotsController.h"
+#include "TBCDriver.h"
 
 extern MicroBit uBit;
 
@@ -61,6 +61,9 @@ BlueToothTask::BlueToothTask()
     m_image = kBluetootBaseImage;
 }
 
+// Adapted from
+// https://www.hackster.io/jrance/super-mario-theme-song-w-piezo-buzzer-and-arduino-1cc2e4
+
 const char barnio[]= {
   ksNoteL8th,
 
@@ -88,8 +91,54 @@ const char barnio[]= {
   ksNoteA6, ksNoteRest, ksNoteF6, ksNoteG6,
   ksNoteRest, ksNoteE6, ksNoteRest, ksNoteC6,
   ksNoteD6, ksNoteB5, ksNoteRest, ksNoteRest
-
 };
+
+//"E6,E6,R,E6, ,C6,E6,R, G6,R,R,R, G5,R,R,R"
+/*
+E6t, E6, E6
+
+%  64nd
+x  32nd
+s  16th
+e  8th
+q  quarter
+h  half
+w  whole
+
+dt;
+A,A,A
+
+*/
+/*
+const char barnio[]= {
+  ksNoteL8th,
+
+  ksNoteE6, ksNoteE6, ksNoteRest, ksNoteE6,
+  ksNoteRest, ksNoteC6, ksNoteE6, ksNoteRest,
+  ksNoteG6, ksNoteRest, ksNoteRest, ksNoteRest,
+  ksNoteG5, ksNoteRest, ksNoteRest, ksNoteRest,
+
+  ksNoteC6, ksNoteRest, ksNoteRest, ksNoteG5,
+  ksNoteRest, ksNoteRest, ksNoteE5, ksNoteRest,
+  ksNoteA5, ksNoteRest, ksNoteB5, ksNoteRest,
+  ksNoteRest, ksNoteAS5, ksNoteA5, ksNoteRest,
+
+  ksNoteG5, ksNoteE6, ksNoteG6,
+  ksNoteA6, ksNoteRest, ksNoteF6, ksNoteG6,
+  ksNoteRest, ksNoteE6, ksNoteRest, ksNoteC6,
+  ksNoteD6, ksNoteB5, ksNoteRest, ksNoteRest,
+
+  ksNoteC6, ksNoteRest, ksNoteRest, ksNoteG5,
+  ksNoteRest, ksNoteRest, ksNoteE5, ksNoteRest,
+  ksNoteRest, ksNoteA5, ksNoteRest, ksNoteB5,
+  ksNoteRest, ksNoteAS5, ksNoteA5, ksNoteRest,
+
+  ksNoteG5, ksNoteE6, ksNoteG6,
+  ksNoteA6, ksNoteRest, ksNoteF6, ksNoteG6,
+  ksNoteRest, ksNoteE6, ksNoteRest, ksNoteC6,
+  ksNoteD6, ksNoteB5, ksNoteRest, ksNoteRest
+};
+*/
 
 void BlueToothTask::Event(MicroBitEvent event)
 {

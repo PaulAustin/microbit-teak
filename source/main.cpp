@@ -25,7 +25,7 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
-#include "TrashbotsController.h"
+#include "TBCDriver.h"
 
 MicroBit uBit;
 MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
