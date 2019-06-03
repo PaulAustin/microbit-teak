@@ -158,7 +158,7 @@ void ServoMessage(int, int) {
   //fiber_sleep(100);
   */
 }
-
+#if 0
 void PlayNoteAsciiStream(const char* streamOpCode, int length) {
 
     teak::tstring   ns(streamOpCode, streamOpCode+length);
@@ -285,6 +285,7 @@ void PlayNoteAsciiStream(const char* streamOpCode, int length) {
   uBit.io.P16.setDigitalValue(1);
   #endif
 }
+#endif
 
 void stopAll()
 {
