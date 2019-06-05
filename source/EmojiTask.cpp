@@ -26,7 +26,7 @@ DEALINGS IN THE SOFTWARE.
 #include "TBCDriver.h"
 
 //------------------------------------------------------------------------------
-// MotorTask - A task for direct control of the motors
+// EmojiTask - A task for faces.
 class EmojiTask : public TeakTask {
 public:
     EmojiTask();
@@ -126,7 +126,11 @@ void EmojiTask::Event(MicroBitEvent event)
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
       if (event.source == MICROBIT_ID_BUTTON_B) {
         gTaskManager.SwitchTo(gpMotorTask);
+        PlayNoteStream(ksNoteC3);
+        PlayNoteStream(ksNoteE3);
+        PlayNoteStream(ksNoteG3);
       } else if (event.source == MICROBIT_ID_BUTTON_A) {
+        gTaskManager.m_animating = true;
         uBit.display.scrollAsync(gTaskManager.BotName(), 70);
         PlayNoteStream(ksNoteC4);
         PlayNoteStream(ksNoteD4);

@@ -143,8 +143,8 @@ void BootTask::Event(MicroBitEvent event)
         gTaskManager.SwitchTo(gpEmojiTask);
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // A button tap skips to main screen
-        // uBit.display.stopAnimation();
-        // m_state = kTaskIdle;
-        // gTaskManager.SwitchTo(gpEmojiTask);
+        uBit.display.stopAnimation();
+        m_state = kTaskIdle;
+        gTaskManager.SwitchTo(gpEmojiTask);
     }
 }

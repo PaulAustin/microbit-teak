@@ -69,6 +69,7 @@ public:
     void MicrobitBtEvent(MicroBitEvent event);
     void SwitchTo(TeakTask* task);
     char* BotName() { return m_name; };
+    bool m_animating;
 private:
     TeakTask* m_currentTask;
     char m_name[8];

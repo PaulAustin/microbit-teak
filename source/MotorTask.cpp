@@ -33,6 +33,8 @@ class MotorTask : public TeakTask {
 public:
     MotorTask();
     void Event(MicroBitEvent event);
+private:
+    int m_runningBits;
 };
 MotorTask gMotorTask;
 TeakTask* gpMotorTask = &gMotorTask;
@@ -54,6 +56,7 @@ MotorTask::MotorTask()
 {
     m_note = ksNoteC4;
     m_image = kMotoBase;
+    m_runningBits = 0;
 }
 
 bool m1State = false;
@@ -64,28 +67,56 @@ void MotorTask::Event(MicroBitEvent event)
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         m_image = kMotoBase;
         if (event.source == MICROBIT_ID_BUTTON_A) {
-            m_image |= kMotorLeftForward;
             SetMotorPower(1, m1State ? 0 : -100);
             m1State = !m1State;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            m_image |= kMotorRightForward;
             SetMotorPower(2, m2State ? 0 : 100);
             m2State = !m2State;
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            m_image |= kMotorLeftForward;
-            m_image |= kMotorRightForward;
             SetMotorPower(1, m1State ? 0 : -100);
             SetMotorPower(2, m2State ? 0 : 100);
             m2State = !m2State;
             m1State = !m1State;
         }
-    } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD){
+        m_runningBits = 0;
+        if (m1State) {
+          m_runningBits |= kMotorLeftForward;
+        }
+        if (m2State) {
+          m_runningBits |= kMotorRightForward;
+        }
+        m_image |= m_runningBits;
+    } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
         // Shut down an pop to top
+        m_runningBits = 0;
         SetMotorPower(1, 0);
         SetMotorPower(2, 0);
+        PlayNoteStream(ksNoteG3);
+        PlayNoteStream(ksNoteE3);
+        PlayNoteStream(ksNoteC3);
         gTaskManager.SwitchTo(gpEmojiTask);
+    } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        // Shut down an pop to top
+        m_runningBits = 0;
+        SetMotorPower(1, 0);
+        SetMotorPower(2, 0);
+        PlayNoteStream(ksNoteG3);
+        PlayNoteStream(ksNoteE3);
+        PlayNoteStream(ksNoteC3);
+        gTaskManager.SwitchTo(gpEmojiTask);
+    } else if(event.source == MICROBIT_ID_BUTTON_A && event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        gTaskManager.m_animating = true;
+        uBit.display.scrollAsync(gTaskManager.BotName(), 70);
+        PlayNoteStream(ksNoteC4);
+        PlayNoteStream(ksNoteD4);
+        PlayNoteStream(ksNoteE4);
+        PlayNoteStream(ksNoteF4);
+        PlayNoteStream(ksNoteG4);
+        PlayNoteStream(ksNoteA5);
+        PlayNoteStream(ksNoteB5);
+        PlayNoteStream(ksNoteC5);
     } else if (event.source == MICROBIT_ID_TIMER) {
-        m_image = kMotoBase;
+        m_image = kMotoBase | m_runningBits;
         if (event.value & 0x08) {
           m_image &= ~(0x04 << 10);
         }

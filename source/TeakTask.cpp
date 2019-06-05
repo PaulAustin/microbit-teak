@@ -78,6 +78,7 @@ void TeakTask::SetAdjacentTasks(TeakTask* leftTask, TeakTask* rightTask)
 TeakTaskManager::TeakTaskManager()
 {
   m_currentTask = NULL;
+  m_animating = false;
 }
 
 //------------------------------------------------------------------------------
@@ -145,6 +146,11 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
          } else if (event.source == MICROBIT_ID_BUTTON_AB) {
              uart->send(ManagedString("(ab)"));
          }
+    } else if (event.source == MICROBIT_ID_DISPLAY) {
+      if (event.value == MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) {
+        m_animating = false;
+        m_currentImage = 0;
+      }
     }
 
     if (m_currentTask != NULL) {
@@ -160,7 +166,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 
     if (!m_currentTask->AsyncImage()) {
         int newImage = m_currentTask->PackedImage();
-        if (newImage != m_currentImage) {
+        if ((newImage != m_currentImage) && (!m_animating)) {
             // If task image has changed the push it to the LEDs
             PBmapUnpack(newImage, uBit.display.image.getBitmap(), uBit.display.image.getWidth());
             m_currentImage = newImage;
