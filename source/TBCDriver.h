@@ -1,5 +1,5 @@
-/*   FANCY
-Copyright (c) 2017 Paul Austin.
+/*
+Copyright (c) 2019 Trashbots, Inc. - SDG
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
