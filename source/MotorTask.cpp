@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Paul Austin.
+Copyright (c) 2019 Trashbots.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -74,12 +74,16 @@ void MotorTask::Event(MicroBitEvent event)
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
             m_image |= kMotorLeftForward;
             m_image |= kMotorRightForward;
+            SetMotorPower(1, m1State ? 0 : -100);
+            SetMotorPower(2, m2State ? 0 : 100);
+            m2State = !m2State;
+            m1State = !m1State;
         }
-    } else if (event.source == MICROBIT_ID_TASK_SWAP) {
+    } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD){
         // Shut down an pop to top
         SetMotorPower(1, 0);
         SetMotorPower(2, 0);
-        gTaskManager.SwitchTo(gpTopMenuTask);
+        gTaskManager.SwitchTo(gpEmojiTask);
     } else if (event.source == MICROBIT_ID_TIMER) {
         m_image = kMotoBase;
         if (event.value & 0x08) {

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Paul Austin.
+Copyright (c) 2019 Trashbots.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -140,11 +140,11 @@ void BootTask::Event(MicroBitEvent event)
         // MICROBIT_DISPLAY_EVT_FREE is fired once the name has scrolled by.
         // Nothing left to do.
         m_state = kTaskIdle;
-        gTaskManager.SwitchTo(gpTopMenuTask);
+        gTaskManager.SwitchTo(gpEmojiTask);
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         // A button tap skips to main screen
-        uBit.display.stopAnimation();
-        m_state = kTaskIdle;
-        gTaskManager.SwitchTo(gpTopMenuTask);
+        // uBit.display.stopAnimation();
+        // m_state = kTaskIdle;
+        // gTaskManager.SwitchTo(gpEmojiTask);
     }
 }

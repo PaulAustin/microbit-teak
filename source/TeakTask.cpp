@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Paul Austin.
+Copyright (c) 2019 Trashbots.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -83,10 +83,13 @@ TeakTaskManager::TeakTaskManager()
 //------------------------------------------------------------------------------
 void TeakTaskManager::Setup()
 {
-    gpEmojiTask->SetAdjacentTasks(gpMotorTask, gpSensorTask);
-    gpMotorTask->SetAdjacentTasks(gpBlueToothTask, gpEmojiTask);
-    gpBlueToothTask->SetAdjacentTasks(gpSensorTask, gpMotorTask);
-    gpSensorTask->SetAdjacentTasks(gpEmojiTask, gpBlueToothTask);
+    //gpEmojiTask->SetAdjacentTasks(gpMotorTask, gpSensorTask);
+    //gpEmojiTask->SetAdjacentTasks(gpEmojiTask, gpEmojiTask);
+    //m_currentTask->Event(event);
+    //gpMotorTask->SetAdjacentTasks(gpEmojiTask, gpEmojiTask);
+    //gpMotorTask->SetAdjacentTasks(gpBlueToothTask, gpEmojiTask);
+    //gpBlueToothTask->SetAdjacentTasks(gpSensorTask, gpMotorTask);
+    //gpSensorTask->SetAdjacentTasks(gpEmojiTask, gpBlueToothTask);
 
     // Start with the boot task.
     SwitchTo(gpBootTask);

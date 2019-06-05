@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2018 Paul Austin.
+Copyright (c) 2019 Trashbots.
 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
@@ -35,6 +35,8 @@ public:
 EmojiTask gEmojiTask;
 TeakTask* gpEmojiTask = &gEmojiTask;
 
+extern MicroBit uBit;
+
 const int kEmojiSmile = PBMAP(
     PBMAP_ROW(0, 0, 0, 0, 0),
     PBMAP_ROW(0, 1, 0, 1, 0),
@@ -42,6 +44,50 @@ const int kEmojiSmile = PBMAP(
     PBMAP_ROW(1, 0, 0, 0, 1),
     PBMAP_ROW(0, 1, 1, 1, 0),
     PBMAP_FRAME_COUNT(1));
+
+const int kEmojiFrown = PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 1, 1, 0),
+    PBMAP_ROW(1, 0, 0, 0, 1),
+    PBMAP_FRAME_COUNT(1));
+
+const int kEmojiBored = PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_FRAME_COUNT(1));
+
+const int kEmojiWow = PBMAP(
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 1, 1, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 1, 1, 1, 0),
+    PBMAP_FRAME_COUNT(1));
+
+const int kEmojiTired = PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 1, 0, 1, 1),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_FRAME_COUNT(1));
+
+const int kEmojiCrazy = PBMAP(
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(0, 0, 0, 0, 0),
+    PBMAP_ROW(1, 0, 1, 0, 1),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_FRAME_COUNT(1));
+
+const int kEmojiReaction[] = {kEmojiSmile, kEmojiTired, kEmojiFrown, kEmojiCrazy, kEmojiBored, kEmojiWow};
+const int notes[] = {ksNoteA5, ksNoteC4, ksNoteD4, ksNoteE4, ksNoteF4, ksNoteG4};
+int spot;
 
 EmojiTask::EmojiTask()
 {
@@ -52,12 +98,45 @@ EmojiTask::EmojiTask()
 void EmojiTask::Event(MicroBitEvent event)
 {
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
-        m_image = kEmojiSmile;
-        if (event.source == MICROBIT_ID_BUTTON_A) {
-        } else if (event.source == MICROBIT_ID_BUTTON_B) {
+        m_image = kEmojiBored;
+        if (event.source == MICROBIT_ID_BUTTON_B) {
+          // pick the next spot in the array
+          if (spot < 5){
+            spot++;
+          } else {
+            spot = 0;
+          }
+
+          PlayNote(notes[spot], 64);
+          m_image = kEmojiReaction[spot];
+
+        } else if (event.source == MICROBIT_ID_BUTTON_A) {
+          // pick the previous spot in the array
+          if (spot > 0){
+            spot--;
+          } else {
+            spot = 5;
+          }
+
+          PlayNote(notes[spot], 64);
+          m_image = kEmojiReaction[spot];
+
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+      if (event.source == MICROBIT_ID_BUTTON_B) {
+        gTaskManager.SwitchTo(gpMotorTask);
+      } else if (event.source == MICROBIT_ID_BUTTON_A) {
+        uBit.display.scrollAsync(gTaskManager.BotName(), 70);
+        PlayNoteStream(ksNoteC4);
+        PlayNoteStream(ksNoteD4);
+        PlayNoteStream(ksNoteE4);
+        PlayNoteStream(ksNoteF4);
+        PlayNoteStream(ksNoteG4);
+        PlayNoteStream(ksNoteA5);
+        PlayNoteStream(ksNoteB5);
+        PlayNoteStream(ksNoteC5);
+      }
     } else if (event.source == MICROBIT_ID_TIMER) {
     }
 }
