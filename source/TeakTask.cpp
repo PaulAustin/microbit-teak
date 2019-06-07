@@ -123,9 +123,14 @@ void TeakTaskManager::SwitchTo(TeakTask* task)
     m_currentTask = task;
 }
 
-const uint8_t* strA = (const uint8_t*)"(a)";
-const uint8_t* strB = (const uint8_t*)"(b)";
-const uint8_t* strAB = (const uint8_t*)"(ab)";
+#define FLASH_STR_DEFINE(_name, _value) const char _name[] = _value
+#define FLASH_STRU(_name) ((const uint8_t*) _name)
+#define FLASH_STR(_name) (_name)
+#define FLASH_STR_LEN(_name) (sizeof(_name))
+
+FLASH_STR_DEFINE(gStrA, "(a)");
+FLASH_STR_DEFINE(gStrB, "(b)");
+FLASH_STR_DEFINE(gStrAB, "(ab)");
 
 //------------------------------------------------------------------------------
 void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
@@ -144,11 +149,11 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
          if (event.source == MICROBIT_ID_BUTTON_A) {
-          //  uart->send(strA, 3);
+          uart->send(FLASH_STRU(gStrA), FLASH_STR_LEN(gStrA));
          } else if (event.source == MICROBIT_ID_BUTTON_B) {
-          //  uart->send(strB, 3);
+           uart->send(FLASH_STRU(gStrB), FLASH_STR_LEN(gStrB));
          } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-          //  uart->send(strAB, 4);
+           uart->send(FLASH_STRU(gStrAB), FLASH_STR_LEN(gStrAB));
          }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
       if (event.value == MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) {
@@ -310,7 +315,8 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
         PlayNote(value, 64);
     } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
         value = atoi(str + 4);
-        // ??? hack its crashing right now (stack blown??) uBit.display.scroll(value);
+        m_animating = true;
+        uBit.display.scroll(value);
     } else if ((strncmp(str, "(stop)", 6) == 0)) {
         stopAll();
     } else {
