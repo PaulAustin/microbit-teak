@@ -33,6 +33,8 @@ MicroBitI2C i2c = MicroBitI2C(I2C_SDA0, I2C_SCL0);
 MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
+char buffer [20];
+
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -66,7 +68,6 @@ int main()
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
 
-        char buffer [30];
         //processAccelerometerData(accelerometerData);
         int accelerometerData = uBit.accelerometer.getX();
         snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);

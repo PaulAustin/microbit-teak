@@ -123,6 +123,10 @@ void TeakTaskManager::SwitchTo(TeakTask* task)
     m_currentTask = task;
 }
 
+const uint8_t* strA = (const uint8_t*)"(a)";
+const uint8_t* strB = (const uint8_t*)"(b)";
+const uint8_t* strAB = (const uint8_t*)"(ab)";
+
 //------------------------------------------------------------------------------
 void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 {
@@ -140,11 +144,11 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
         }
     } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
          if (event.source == MICROBIT_ID_BUTTON_A) {
-             uart->send(ManagedString("(a)"));
+          //  uart->send(strA, 3);
          } else if (event.source == MICROBIT_ID_BUTTON_B) {
-             uart->send(ManagedString("(b)"));
+          //  uart->send(strB, 3);
          } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-             uart->send(ManagedString("(ab)"));
+          //  uart->send(strAB, 4);
          }
     } else if (event.source == MICROBIT_ID_DISPLAY) {
       if (event.value == MICROBIT_DISPLAY_EVT_ANIMATION_COMPLETE) {
@@ -306,11 +310,12 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
         PlayNote(value, 64);
     } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
         value = atoi(str + 4);
-        uBit.display.scroll(value);
+        // ??? hack its crashing right now (stack blown??) uBit.display.scroll(value);
     } else if ((strncmp(str, "(stop)", 6) == 0)) {
         stopAll();
     } else {
-        uBit.display.scroll(str);
+        // Debug option, if its not understood show the message.
+        // uBit.display.scroll(str);
     }
     s->decr();
 }
