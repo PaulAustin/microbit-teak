@@ -21,7 +21,6 @@ DEALINGS IN THE SOFTWARE.
 */
 
 #include <MicroBit.h>
-#include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 #include "TBCDriver.h"
 

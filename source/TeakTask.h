@@ -87,5 +87,6 @@ extern TeakTask* gpSensorTask;
 extern TeakTask* gpTempTask;
 
 extern TeakTaskManager gTaskManager;
+class MicroBitUARTServiceFixed;
 extern MicroBitUARTServiceFixed *uart;
 void setAdvertising(bool state);
