@@ -57,24 +57,25 @@ int main()
     PlayNoteStream(ksNoteB5);
     PlayNoteStream(ksNoteC5);
 
+    const char* accMessage = "(accel:%d)";
+    const char* tempMessage = "(accel:%d)";
+
     while(1) {
         tickCount++;
         fiber_sleep(50);
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
 
-        int accelerometerData = uBit.accelerometer.getX();
+        char buffer [30];
         //processAccelerometerData(accelerometerData);
+        int accelerometerData = uBit.accelerometer.getX();
+        snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
+        uart->send((uint8_t *)buffer, strlen(buffer));
 
-        int thermometerData = thermometer.getTemperature();
         //processThermometerData(thermometerData);
-
-        char accelString [30];
-        snprintf(accelString, sizeof(accelString), "(accel:%d)", accelerometerData);
-        char tempString [30];
-        snprintf(tempString, sizeof(tempString), "(temp:%d)", thermometerData);
-        uart->send(ManagedString(accelString));
-        uart->send(ManagedString(tempString));
+        int thermometerData = thermometer.getTemperature();
+        snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
+        uart->send((uint8_t *)buffer, strlen(buffer));
     }
     // release_fiber();
 }
