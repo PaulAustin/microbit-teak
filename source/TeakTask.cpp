@@ -143,11 +143,11 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
             m_btConnected = false;
             uBit.display.print('D');
         }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
-        if (event.source == MICROBIT_ID_BUTTON_B) {
+    //} else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+        //if (event.source == MICROBIT_ID_BUTTON_B) {
           // uBit.display.print('G');
-        }
-    } else if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+        //}
+    } else if (event.value == MICROBIT_BUTTON_EVT_CLICK || event.value == MICROBIT_BUTTON_EVT_HOLD) {
          if (event.source == MICROBIT_ID_BUTTON_A) {
           uart->send(FLASH_STRU(gStrA), FLASH_STR_LEN(gStrA));
          } else if (event.source == MICROBIT_ID_BUTTON_B) {

@@ -96,7 +96,7 @@ EmojiTask::EmojiTask()
 
 void EmojiTask::Event(MicroBitEvent event)
 {
-    if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
+    if (!gTaskManager.m_btConnected && event.value == MICROBIT_BUTTON_EVT_CLICK) {
         m_image = kEmojiBored;
         if (event.source == MICROBIT_ID_BUTTON_B) {
           // pick the next spot in the array
@@ -122,7 +122,7 @@ void EmojiTask::Event(MicroBitEvent event)
 
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
         }
-    } else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
+    } else if (!gTaskManager.m_btConnected && event.value == MICROBIT_BUTTON_EVT_HOLD) {
       if (event.source == MICROBIT_ID_BUTTON_B) {
         gTaskManager.SwitchTo(gpMotorTask);
         PlayNoteStream(ksNoteC3);

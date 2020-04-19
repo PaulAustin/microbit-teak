@@ -70,11 +70,11 @@ public:
     void SwitchTo(TeakTask* task);
     char* BotName() { return m_name; };
     bool m_animating;
+    bool m_btConnected = false;
 private:
     TeakTask* m_currentTask;
     char m_name[8];
     int m_currentImage = 0;
-    bool m_btConnected = false;
 };
 
 extern TeakTask* gpBootTask;
