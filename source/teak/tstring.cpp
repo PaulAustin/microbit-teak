@@ -186,7 +186,7 @@ bool tstring::read_bin_text_chunk(tstring& token, bool valid) {
 //-----------------------------------------------------------------------------
 bool tstring::valid_token_end(bool valid) {
     char c = peek_char();
-    return (c == '(' || c == ')' || isspace(c) || c == 0);
+    return valid && (c == '(' || c == ')' || isspace(c) || c == 0);
 }
 //-----------------------------------------------------------------------------
 int tstring::to_integer() {
