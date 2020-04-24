@@ -210,7 +210,7 @@ void TBCInit();
 void PlayNoteStream(const char* value, int length);
 void PlayNoteStream(char value);
 void PlayNote(int value, int duration);
-void SetMotorPower(int motor, int power);
+int SetMotorPower(int motor, int power);
 void stopAll();
 
 #endif

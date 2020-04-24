@@ -234,6 +234,7 @@ void setAdvertising(bool state)
 //------------------------------------------------------------------------------
 // Could the code tap into the lower layer, and look for complete expression
 // that would be better. It will be helpful to have sctatter string support.
+//SPI spi(uBit.io.P15, uBit.io.P14, uBit.io.P13, NC);
 SPI spi(MOSI, MISO, SCK);
 
 int hexCharToInt(char c) {

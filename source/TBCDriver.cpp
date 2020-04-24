@@ -33,10 +33,10 @@ void TBCInit()
   //spi.frequency(1000000);
 }
 
-void SetMotorPower(int motor, int power)
+int SetMotorPower(int motor, int power)
 {
   if (motor < 1 || motor > 2)
-    return;
+    return -1;
 
   if (power > 100) {
       power = 100;
@@ -44,14 +44,103 @@ void SetMotorPower(int motor, int power)
       power = -100;
   }
 
-  uBit.io.P16.setDigitalValue(0);
-  if (motor == 1) {
-      spi.write(kRM_Motor1Power);
-  } else {
-      spi.write(kRM_Motor2Power);
+  //uBit.io.P16.setDigitalValue(0);
+
+
+  /* //useless
+  if (motor == 1)
+  {
+      if (power < 0)
+      {
+        spi.write(power+15);
+
+      }
+      else
+      {
+        spi.write(power);
+      }
   }
-  spi.write(power);
-  uBit.io.P16.setDigitalValue(1);
+
+  if (motor == 2)
+  {
+    if (power > 0)
+    {
+      spi.write(power-50);
+    }
+    else
+    {
+      spi.write(power);
+    }
+  }
+  else
+  {
+    spi.write(power);
+  }*/
+/*
+uBit.io.P16.setDigitalValue(0);
+//#if 0
+
+char reply[4];
+//char *send[4];
+send[0] = (char*)0;
+send[1] = (char*)1;
+send[2] = (char*)2;
+send[3] = (char*)3;
+
+//spi.write(0x80 | kRM_SystemStatus, (int)1, reply[0], (int)1);
+
+reply[0] = spi.write(0x80 | kRM_Motor2Encoder);  // Read class
+//long reply = spi.write(kRM_Motor2Encoder);
+//reply = reply & 0xFF;
+//reply[0] = spi.write(0);
+//reply[1] = spi.write(4);
+reply[3] = spi.write(3);
+reply[2] = spi.write(2);
+reply[1] = spi.write(1);
+reply[0] = spi.write(0);
+*/
+
+
+/*
+fiber_sleep(5);
+reply[3] = spi.write_readinto(3);
+fiber_sleep(5);
+reply[2] = spi.write_readinto(2);
+fiber_sleep(5);
+reply[1] = spi.write_readinto(1);
+fiber_sleep(5);
+reply[0] = spi.write_readinto(0);
+fiber_sleep(5);
+*/
+/*reply[6] = spi.write(2); //FW M
+reply[7] = spi.write(3); //FW D*/
+//uBit.io.P16.setDigitalValue(1);
+
+  /*reply[4] = spi.write(4); // Self test 1
+  reply[5] = spi.write(5); // Self test 2
+  reply[6] = spi.write(6); // TBD
+  reply[7] = spi.write(7); // TBD*/
+//uBit.display.print('C');
+//uBit.display.print('D');
+  //uBit.display.print(reply[0]);
+//#endif
+uBit.io.P16.setDigitalValue(0);
+//  spi.write(power);
+//uBit.io.P16.setDigitalValue(1);
+if (motor == 1) {
+    spi.write(kRM_Motor1Power); //left, -100 is forward
+} else {
+    spi.write(kRM_Motor2Power); //right, 100 is forward
+}
+spi.write(power);
+
+//int response = spi.write(0xFF);
+//spi.write(0xFF);
+
+uBit.io.P16.setDigitalValue(1);
+
+return -1;//reply[0];
+
 }
 
 void PlayNote(int solfegeNote, int duration) {

@@ -60,20 +60,28 @@ MotorTask::MotorTask()
 
 bool m1State = false;
 bool m2State = false;
+int power1 = 0;
+int power2 = 0;
+// create variable encVal
 
 void MotorTask::Event(MicroBitEvent event)
 {
+  int encVal = -1;
     if (event.value == MICROBIT_BUTTON_EVT_CLICK) {
         m_image = kMotoBase;
         if (event.source == MICROBIT_ID_BUTTON_A) {
             SetMotorPower(1, m1State ? 0 : -100);
+            power1 = -100;
             m1State = !m1State;
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
             SetMotorPower(2, m2State ? 0 : 100);
+            power2 = 100;
             m2State = !m2State;
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
             SetMotorPower(1, m1State ? 0 : -100);
             SetMotorPower(2, m2State ? 0 : 100);
+            power1 = -100;
+            power2 = 100;
             m2State = !m2State;
             m1State = !m1State;
         }
@@ -85,6 +93,8 @@ void MotorTask::Event(MicroBitEvent event)
           m_runningBits |= kMotorRightForward;
         }
         m_image |= m_runningBits;
+        m_image = encVal;
+
     } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
         // Shut down an pop to top
         m_runningBits = 0;
@@ -115,9 +125,56 @@ void MotorTask::Event(MicroBitEvent event)
         PlayNoteStream(ksNoteB5);
         PlayNoteStream(ksNoteC5);
     } else if (event.source == MICROBIT_ID_TIMER) {
-        m_image = kMotoBase | m_runningBits;
+      //SetMotorPower(2,95);
+      //  m_image = kMotoBase | m_runningBits;
+
         if (event.value & 0x08) {
-          m_image &= ~(0x04 << 10);
+
+          //TODO: Read rpm value from encoder 2
+            //int actual_p2 = rpm_to_power(rpm)
+          int actual_p2 = 100;
+          int power_change = power2 - actual_p2; //positive - increase entry, negative - decrease entry
+          if (power_change != 0)
+          {
+            if (power2 == 100 && power_change > 0)
+              SetMotorPower(1, power1+power_change);
+            else
+              SetMotorPower(2, power2+power_change);
+          }
         }
+        else
+        {
+          //TODO: Read rpm value from encoder 1
+            //int actual_p1 = rpm_to_power(rpm)
+            int actual_p1 = 75;
+            int power_change = abs(power1) - actual_p1; //positive - incease entry, negative - decrease entry
+            if (power_change != 0)
+            {
+              if (power1 < 0 && power2 > 0) //both forward
+              {
+                if (power1 == -100 && power_change > 0)
+                  SetMotorPower(2, power2-power_change);
+                else
+                  SetMotorPower(1, power1-power_change);
+              }
+              
+
+              else
+                continue;
+            /*
+          int actual_p1 = 75;
+          int power_change = abs(power1) - actual_p1; //positive - incease entry, negative - decrease entry
+          if (power_change != 0)
+          {
+            if (power1 == -100 && power_change > 0)
+              SetMotorPower(2, power2-power_change);
+            else
+              SetMotorPower(1, power1-power_change);
+          }
+          */
+        }
+
+
+
     }
 }
