@@ -29,8 +29,9 @@ extern MicroBit uBit;
 
 void TBCInit()
 {
-  //spi.format(8, 3);
-  //spi.frequency(1000000);
+  spi.format(8, 0);
+  spi.frequency(1000000);
+  uBit.io.P16.setDigitalValue(1);
 }
 
 int SetMotorPower(int motor, int power)
@@ -188,23 +189,34 @@ void SetMotorPower(int motor, int power)
 }
 #endif
 
+char reply[8];
+
 void ReadTBCSystemStatus() {
   //char send[8] = {0, 1, 2, 3, 4, 5, 6, 7};
   uBit.io.P16.setDigitalValue(0);
-#if 0
-char reply[8];
+//char reply[8];
   // spi.write(0x80 | SYS_Status);
-  spi.write(SYS_Status);  // Read class
-  reply[0] = spi.write(0); //HW
-  reply[1] = spi.write(1); //FW Y
-  reply[2] = spi.write(2); //FW M
-  reply[3] = spi.write(3); //FW D
-  reply[4] = spi.write(4); // Self test 1
+  spi.write(-3);  // OR kRM_Motor1Encoder
+  fiber_sleep(6); //HW
+  spi.write(4); // dummy byte - keep at 4
+  reply[0] = spi.write(3); // returns 4
+  reply[1] = spi.write(2); // returns 3
+  reply[2] = spi.write(1); // returns 2
+  reply[3] = spi.write(0); // returns 1
+  /*reply[4] = spi.write(4); // Self test 1
   reply[5] = spi.write(5); // Self test 2
   reply[6] = spi.write(6); // TBD
-  reply[7] = spi.write(7); // TBD
-#endif
-uBit.io.P16.setDigitalValue(1);
+  reply[7] = spi.write(7); // TBD*/
+  uBit.io.P16.setDigitalValue(1);
+}
+
+
+void PlaybackReply() {
+  for (uint8_t i=0; i< 4; i++)
+  {
+    uBit.display.scrollAsync(reply[i]);
+  }
+
 }
 
 void ServoStop() {

@@ -157,10 +157,10 @@ void MotorTask::Event(MicroBitEvent event)
                 else
                   SetMotorPower(1, power1-power_change);
               }
-              
 
-              else
-                continue;
+          }
+              //else
+            //    continue;
             /*
           int actual_p1 = 75;
           int power_change = abs(power1) - actual_p1; //positive - incease entry, negative - decrease entry

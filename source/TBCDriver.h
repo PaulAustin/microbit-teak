@@ -212,5 +212,7 @@ void PlayNoteStream(char value);
 void PlayNote(int value, int duration);
 int SetMotorPower(int motor, int power);
 void stopAll();
+void ReadTBCSystemStatus();
+void PlaybackReply();
 
 #endif

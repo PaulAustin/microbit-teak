@@ -40,8 +40,7 @@ int main()
     // Initialise the micro:bit runtime.
     uBit.init();
 
-    spi.format(8, 3);
-    spi.frequency(1000000);
+    TBCInit();
 
     gTaskManager.Setup();
 
@@ -67,6 +66,10 @@ int main()
         fiber_sleep(50);
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
+
+        ReadTBCSystemStatus();
+
+        PlaybackReply();
 
         //processAccelerometerData(accelerometerData);
         int accelerometerData = uBit.accelerometer.getX();
