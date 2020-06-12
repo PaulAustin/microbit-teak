@@ -39,7 +39,7 @@ int main()
 {
     // Initialise the micro:bit runtime.
     uBit.init();
-
+    TBCInit();
     spi.format(8, 3);
     spi.frequency(1000000);
 
@@ -59,6 +59,7 @@ int main()
     PlayNoteStream(ksNoteB5);
     PlayNoteStream(ksNoteC5);
 
+
     const char* accMessage = "(accel:%d)";
     const char* tempMessage = "(temp:%d)";
 
@@ -68,6 +69,7 @@ int main()
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
 
+        
         //processAccelerometerData(accelerometerData);
         int accelerometerData = uBit.accelerometer.getX();
         snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);

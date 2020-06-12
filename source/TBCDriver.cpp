@@ -23,14 +23,16 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "TBCDriver.h"
 #include "teak/tstring.h"
+#include <string>
 
 extern MicroBit uBit;
 //SPI spi(MOSI, MISO, SCK);
 
 void TBCInit()
 {
-  //spi.format(8, 3);
-  //spi.frequency(1000000);
+  spi.format(8, 0);
+  spi.frequency(1000000);
+  uBit.io.P16.setDigitalValue(1);
 }
 
 void SetMotorPower(int motor, int power)
@@ -48,8 +50,9 @@ void SetMotorPower(int motor, int power)
   if (motor == 1) {
       spi.write(kRM_Motor1Power);
   } else {
-      spi.write(kRM_Motor2Power);
+      spi.write(kRM_Motor2Power); 
   }
+
   spi.write(power);
   uBit.io.P16.setDigitalValue(1);
 }
@@ -99,25 +102,80 @@ void SetMotorPower(int motor, int power)
 }
 #endif
 
-void ReadTBCSystemStatus() {
-  //char send[8] = {0, 1, 2, 3, 4, 5, 6, 7};
+int reply[8] = {0};
+uint8_t parts[8] = {0}; 
+
+int ReadEncoder1() {
   uBit.io.P16.setDigitalValue(0);
-#if 0
-char reply[8];
-  // spi.write(0x80 | SYS_Status);
-  spi.write(SYS_Status);  // Read class
-  reply[0] = spi.write(0); //HW
-  reply[1] = spi.write(1); //FW Y
-  reply[2] = spi.write(2); //FW M
-  reply[3] = spi.write(3); //FW D
-  reply[4] = spi.write(4); // Self test 1
-  reply[5] = spi.write(5); // Self test 2
-  reply[6] = spi.write(6); // TBD
-  reply[7] = spi.write(7); // TBD
-#endif
-uBit.io.P16.setDigitalValue(1);
+  spi.write(-15);  // OR kRM_Motor1Encoder
+  fiber_sleep(6); //HW
+  spi.write(4); // dummy byte - keep at 4
+  reply[0] = spi.write(3); // returns 4
+  reply[1] = spi.write(2); // returns 3
+  reply[2] = spi.write(1); // returns 2
+  reply[3] = spi.write(0); // returns 1
+
+
+  uBit.io.P16.setDigitalValue(1);
+  int combo = (reply[0]) | (reply[1] << 8) | (reply[2] << 16) | (reply[3] << 24);
+  return combo;
 }
 
+
+int ReadEncoder2() {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(-25);  // OR kRM_Motor1Encoder
+  fiber_sleep(6); //HW
+  spi.write(4); // dummy byte - keep at 4
+  reply[0] = spi.write(3); // returns 4
+  reply[1] = spi.write(2); // returns 3
+  reply[2] = spi.write(1); // returns 2
+  reply[3] = spi.write(0); // returns 1
+
+  uBit.io.P16.setDigitalValue(1);
+  int combo = (reply[0]) | (reply[1] << 8) | (reply[2] << 16) | (reply[3] << 24);
+  return combo;
+}
+/*
+int ReadEncoder1() {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(-15);  // OR kRM_Motor1Encoder
+  fiber_sleep(6); //HW
+  spi.write(4); // dummy byte - keep at 4
+  parts[0] = spi.write(3); // returns 4
+  parts[1] = spi.write(2); // returns 3
+  parts[2] = spi.write(1); // returns 2
+  parts[3] = spi.write(0); // returns 1
+  reply[0] = 0x00000000 | parts[0];
+  reply[1] = 0x00000000 | parts[1];
+  reply[2] = 0x00000000 | parts[2];
+  reply[3] = 0x00000000 | parts[3];
+
+  uBit.io.P16.setDigitalValue(1);
+  int combo = (reply[0]) | (reply[1] << 8) | (reply[2] << 16) | (reply[3] << 24);
+  return combo;
+}
+
+
+int ReadEncoder2() {
+  uBit.io.P16.setDigitalValue(0);
+  spi.write(-25);  // OR kRM_Motor1Encoder
+  fiber_sleep(6); //HW
+  spi.write(4); // dummy byte - keep at 4
+  parts[0] = spi.write(3); // returns 4
+  parts[1] = spi.write(2); // returns 3
+  parts[2] = spi.write(1); // returns 2
+  parts[3] = spi.write(0); // returns 1
+  reply[0] = 0x00000000 | parts[0];
+  reply[2] = 0x00000000 | parts[1];
+  reply[3] = 0x00000000 | parts[2];
+  reply[4] = 0x00000000 | parts[3];
+
+  uBit.io.P16.setDigitalValue(1);
+  int combo = (reply[0]) | (reply[1] << 8) | (reply[2] << 16) | (reply[3] << 24);
+  return combo;
+}
+*/
 void ServoStop() {
   /*
   uBit.io.P16.setDigitalValue(0);
@@ -190,17 +248,17 @@ void PlayNoteAsciiStream(const char* streamOpCode, int length) {
             c = ns.get_char();
         }
 
-        ksNoteL0 = 100,		// Sets last note but does play it.
+        ksNoteL0 = 100,   // Sets last note but does play it.
         ksNoteL64th,
-    	ksNoteL32nd,
-    	ksNoteL16th,
-    	ksNoteL8th,
-    	ksNoteL4th,
-    	ksNoteLHalf,
-    	ksNoteLWhole,
-    	ksNoteLTriplet,  	// Note length is 1/3 twice the current
-    	ksNoteLDot,				// Note length is lengthened by 1/2
-    	ksNoteLFermata,  	// Note length is doubled
+      ksNoteL32nd,
+      ksNoteL16th,
+      ksNoteL8th,
+      ksNoteL4th,
+      ksNoteLHalf,
+      ksNoteLWhole,
+      ksNoteLTriplet,   // Note length is 1/3 twice the current
+      ksNoteLDot,       // Note length is lengthened by 1/2
+      ksNoteLFermata,   // Note length is doubled
 
         // Next is optional length
         if (c == ':') {

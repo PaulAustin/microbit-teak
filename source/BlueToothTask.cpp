@@ -159,14 +159,14 @@ void BlueToothTask::Event(MicroBitEvent event)
         m_state = kBlueToothIdle;
         m_asyncImage = false;
     } else if (event.source == MICROBIT_ID_TIMER) {
+          
+
         if (!m_advertising) {
             m_advertising = true;
             setAdvertising(m_advertising);
         }
         m_image = kBluetootBaseImage;
-        if (event.value & 0x08) {
-            m_image &= ~(0x04);
-        }
+        
         // Once connected to it can pop back to the top menu.
     } else if (event.source == MICROBIT_ID_TASK_SWAP) {
         // Shut down an pop to top
