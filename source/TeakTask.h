@@ -41,7 +41,6 @@ int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 // Adding a new event source
 #define MICROBIT_ID_TIMER 512
 #define MICROBIT_ID_TASK_SWAP 513
-
 // Case # 21-05-398
 
 class TeakTask {

@@ -22,13 +22,11 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 #include "TBCDriver.h"
-
+int motor_correction;
 extern MicroBit uBit;
 const int FIRST_VALUE = 0xDEADBEEF;
-int power1 = 0;
-int power2 = 0;
+
 int corrections[101] = {};
-int calibrate = 100;
 int prevEncod1 = FIRST_VALUE;
 int prevEncod2 = FIRST_VALUE;
 int test_power = 40;
@@ -169,186 +167,65 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
     else if (event.source == MICROBIT_ID_TIMER) {
       if (m_currentTask != gpMotorTask) 
       {
-        if (calibrate == 100)
+        if (revolutions == 0)
         {
-            if (revolutions == 0)
-            {
-                SetMotorPower(2, test_power);
-                //fiber_sleep(10);
-                SetMotorPower(1, -test_power);
-                power1 = -test_power;
-                power2 = test_power;
-                //fiber_sleep(200); 
-            }
-            if (revolutions < THRESHOLD)
-            {
-                int current1 = ReadEncoder1();
-                int current2 = -1*ReadEncoder2();
-                int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
-                int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
-                one_values[revolutions] = change1;
-                two_values[revolutions] = change2;
-            //uBit.display.scroll('S');
-            //uBit.display.scroll(change1);
-            //uBit.display.scroll(change2);
-                prevEncod1 = current1;
-                prevEncod2 = current2;
-                revolutions++;
-                fiber_sleep(50);
-            }
-            if (revolutions == THRESHOLD)
-            {
-                int sum1 = 0;
-                int sum2 = 0;
-                
-                sort(one_values,one_values+THRESHOLD);
-                sort(two_values,two_values+THRESHOLD);
+            SetMotorPower(2, test_power);
+            //fiber_sleep(10);
+            SetMotorPower(1, -test_power);
 
-                for (int i = 0; i < 5; i++)
-                {
-                    //uBit.display.scroll(one_values[i]);
-                    //uBit.display.scroll(two_values[i]);
-                    sum1 += one_values[i];
-                    sum2 += two_values[i];
-                }
-                float average = (sum1+sum2);
-                int temp = 1.0 * (sum2-sum1) / sum2 * power2;
-                int median1 = one_values[THRESHOLD/2];
-                int median2 = two_values[THRESHOLD/2];
-                int median_average = 1.0 * (median1 + median2) / 2;
-                int median_temp = 1.0 * (median2-median1) / median_average * power2;
-
-                // uBit.display.scroll('S');
-                // uBit.display.scroll(sum1);
-                // uBit.display.scroll(sum2);
-                //uBit.display.scroll(median1);
-                //uBit.display.scroll(median2);
-                //uBit.display.scroll(median_temp);
-                corrections[test_power] = -median_temp;
-                SetMotorPower(1, 0);
-                SetMotorPower(2, 0);
-                if (test_power != 100)
-                {
-                  revolutions = 0;
-                  test_power += 10;
-                  prevEncod1 = FIRST_VALUE;
-                  prevEncod2 = FIRST_VALUE;
-                  fiber_sleep(300);
-                }
-                else
-                {
-                  revolutions = 100;
-                }
-            }
-            //fiber_sleep(50);
-
+            //fiber_sleep(200); 
         }
-        if (calibrate != 100)
+        if (revolutions < THRESHOLD)
         {
-            //uBit.display.scroll(calibrate);
-            if (calibrate%5 == 0)
+            int current1 = ReadEncoder1();
+            int current2 = -1*ReadEncoder2();
+            int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
+            int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
+            one_values[revolutions] = change1;
+            two_values[revolutions] = change2;
+        //uBit.display.scroll('S');
+        //uBit.display.scroll(change1);
+        //uBit.display.scroll(change2);
+            prevEncod1 = current1;
+            prevEncod2 = current2;
+            revolutions++;
+            fiber_sleep(50);
+        }
+        if (revolutions == THRESHOLD)
+        {
+
+            sort(one_values,one_values+THRESHOLD);
+            sort(two_values,two_values+THRESHOLD);
+
+
+            //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
+            int median1 = one_values[THRESHOLD/2];
+            int median2 = two_values[THRESHOLD/2];
+            int median_average = 1.0 * (median1 + median2) / 2;
+            int median_temp = 1.0 * (median2-median1) / median_average * test_power;
+
+            // uBit.display.scroll('S');
+            // uBit.display.scroll(sum1);
+            // uBit.display.scroll(sum2);
+            //uBit.display.scroll(median1);
+            //uBit.display.scroll(median2);
+            //uBit.display.scroll(median_temp);
+            corrections[test_power] = -median_temp;
+            SetMotorPower(1, 0);
+            SetMotorPower(2, 0);
+            if (test_power != 100)
             {
-                SetMotorPower(1, -(calibrate+5)); //Set motor power to calibrate + 5
-                if (calibrate == 95)
-                {
-                  fiber_sleep(10);
-                }
-                SetMotorPower(2, calibrate+5);
-                power1 = -(calibrate+5);
-                power2 = calibrate+5;
-                fiber_sleep(100);
-
+              revolutions = 0;
+              test_power += 10;
+              prevEncod1 = FIRST_VALUE;
+              prevEncod2 = FIRST_VALUE;
+              fiber_sleep(300);
             }
-            if (calibrate%5 > 0)
+            else
             {
-                if (calibrate%5 < 3)
-                {
-                    fiber_sleep(100);
-                }
-                if (calibrate%5 == 3)
-                {
-                    prevEncod1 = ReadEncoder1();
-                    prevEncod2 = -1*ReadEncoder2();
-                    fiber_sleep(1500);
-                }
-
-                if (calibrate%5 == 4)
-                {
-                    calibrate--;
-                    int currEncod1 = ReadEncoder1();
-                    currEncod1 = currEncod1;
-                    if (prevEncod1 == FIRST_VALUE)
-                    {
-                        prevEncod1 = currEncod1;
-                    }
-                    int change1  = currEncod1 - prevEncod1;
-                    
-                    int currEncod2 = ReadEncoder2();
-                    currEncod2 = (-1)*(currEncod2);
-                    if (prevEncod2 == FIRST_VALUE)
-                    {
-                        prevEncod2 = currEncod2;
-                    }
-                    int change2  = currEncod2 - prevEncod2;
-
-                    double correction_decimal = -1 * (change2 - change1);
-                    correction_decimal = correction_decimal / (change2) ;
-                    int correction = correction_decimal* power2;
-                    //uBit.display.scroll(change1);
-                    //uBit.display.scroll(change2);
-                    if (change2 == 0 && change1 == 0)
-                    {
-                      if (calibrate == 98)
-                      {
-                        calibrate++;
-                      }
-                      else
-                      {
-                        calibrate += 6;
-                      }
-                    }
-                    else if (change2 == 0 || change1 == 0)
-                    {
-                        if (calibrate == 98)
-                        {
-                          calibrate++;
-                        }
-                        else
-                        {
-                          calibrate += 6;
-                        }
-                        corrections[calibrate+1] = correction; //correction storage for calibrate + 1
-                        SetMotorPower(1,0);
-                        SetMotorPower(2,0);
-                        power1 = 0;
-                        power2 = 0;
-                        fiber_sleep(50);
-                    }
-                    else if (abs(correction) < 50)
-                    {
-                        if (calibrate == 98)
-                        {
-                          calibrate++;
-                        }
-                        else
-                        {
-                          calibrate += 6;
-                        }
-                        
-                        corrections[calibrate+1] = correction; //correction storage for calibrate + 1
-                        SetMotorPower(1,0);
-                        SetMotorPower(2,0);
-                        power1 = 0;
-                        power2 = 0;
-                        fiber_sleep(50);
-                    }
-                    else
-                    {
-                        fiber_sleep(1000);
-                    }     
-                }
+              motor_correction = -median_temp;
+              revolutions = 100;
             }
-            calibrate++;
         }
       }
     }
@@ -480,8 +357,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
         if(strncmp(str, "(1 2)", 5) == 0) {
             if(strncmp(str + 6, "d", 1) == 0) {
                 value = atoi(str + 8);
-                if (calibrate == 100)
-                {
+
                   int index = (-value+5)/10*10;
                   int correction = corrections[index];
                   correction = 1.0 * correction / index * (-value);
@@ -491,7 +367,6 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
                   }
                   SetMotorPower(1, value);
                   SetMotorPower(2, -value+correction);
-                }   
                 
             }
         } else if(strncmp(str, "1", 1) == 0) {
@@ -502,8 +377,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
         } else if(strncmp(str, "2", 1) == 0) {
             if(strncmp(str + 2, "d", 1) == 0) {
                 value = atoi(str + 4);
-                if (calibrate == 100)
-                {
+
                   int index = (-value+5)/10*10;
                   int correction = corrections[index];
                   correction = 1.0 * correction / index * (-value);
@@ -512,7 +386,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
                     correction = 0;
                   }
                   SetMotorPower(2, -value+correction);
-                }   
+ 
             }
         }
     } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
