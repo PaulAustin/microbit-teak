@@ -34,6 +34,7 @@ int revolutions = 0;
 const int THRESHOLD = 15;
 int one_values[THRESHOLD];
 int two_values[THRESHOLD];
+int versionNumber = 10;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
@@ -165,7 +166,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       }
     }
     else if (event.source == MICROBIT_ID_TIMER) {
-      if (m_currentTask != gpMotorTask) 
+      if (m_currentTask != gpMotorTask)
       {
         if (revolutions == 0)
         {
@@ -173,7 +174,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
             //fiber_sleep(10);
             SetMotorPower(1, -test_power);
 
-            //fiber_sleep(200); 
+            //fiber_sleep(200);
         }
         if (revolutions < THRESHOLD)
         {
@@ -367,7 +368,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
                   }
                   SetMotorPower(1, value);
                   SetMotorPower(2, -value+correction);
-                
+
             }
         } else if(strncmp(str, "1", 1) == 0) {
             if(strncmp(str + 2, "d", 1) == 0) {
@@ -386,7 +387,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
                     correction = 0;
                   }
                   SetMotorPower(2, -value+correction);
- 
+
             }
         }
     } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
@@ -405,6 +406,11 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
         uBit.display.scroll(value);
     } else if ((strncmp(str, "(stop)", 6) == 0)) {
         stopAll();
+    } else if((strncmp(str, "(version)", 9) == 0)) {
+      char buffer [20];
+      const char* versionMessage = "(version:%d)";
+      snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+      uart->send((uint8_t *)buffer, strlen(buffer));
     } else {
         // Debug option, if its not understood show the message.
         // uBit.display.scroll(str);
