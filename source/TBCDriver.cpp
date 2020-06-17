@@ -46,13 +46,18 @@ void SetMotorPower(int motor, int power)
       power = -100;
   }
 
+  uBit.serial.send('\r');
+  uBit.serial.send('\n');
+  uBit.serial.send(motor);
+  uBit.serial.send(' ');
+  uBit.serial.send(power);
+  
   uBit.io.P16.setDigitalValue(0);
   if (motor == 1) {
       spi.write(kRM_Motor1Power);
   } else {
       spi.write(kRM_Motor2Power); 
   }
-
   spi.write(power);
   uBit.io.P16.setDigitalValue(1);
 }

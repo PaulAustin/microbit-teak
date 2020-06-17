@@ -1,6 +1,6 @@
 /*
 Copyright (c) 2019 Trashbots, Inc. - SDG
-
+ 
 Permission is hereby granted, free of charge, to any person obtaining a
 copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation
@@ -23,8 +23,63 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
-
+#include "TBCDriver.h"
 extern MicroBit uBit;
+
+
+
+/*
+
+Remote values when motor 2 set to 100:s
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+1 0
+2 0
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+1 0
+2 0
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+2 72
+
+*/
 
 const int bootImages[] __attribute__ ((aligned(4))) = {
   PBMAP(
@@ -104,10 +159,8 @@ private:
       kTaskScollBotName
     };
 };
-
 BootTask gBootTask;
 TeakTask *gpBootTask = &gBootTask;
-
 BootTask::BootTask()
 {
     m_frame = 0;

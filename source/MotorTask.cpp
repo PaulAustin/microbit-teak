@@ -23,16 +23,14 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "TeakTask.h"
 #include "TBCDriver.h"
-#include <string>
 extern MicroBit uBit;
-extern int motor_correction;
+extern short motor_correction;
 //------------------------------------------------------------------------------
 // MotorTask - A task for direct control of the motors
 
 
-const int FIRST_VALUE = 0xDEADBEEF;
-const int THRESHOLD = 15;
-const int TEST_POWER = 100;
+const short THRESHOLD = 15;
+const short TEST_POWER = 100;
 
 #define just_started(encod) (encod == FIRST_VALUE)
 
@@ -89,9 +87,11 @@ void MotorTask::Event(MicroBitEvent event)
             m2State = !m2State;
 
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
+            uBit.serial.send(motor_correction);
             int input_power = TEST_POWER;
             int correction = motor_correction * 1.0 / TEST_POWER * input_power;
             int corrected_power = (TEST_POWER+correction);
+            uBit.serial.send(corrected_power);
             SetMotorPower(1, m1State ? 0 : -TEST_POWER);
             SetMotorPower(2, m2State ? 0 : corrected_power);
             m2State = !m2State;

@@ -22,18 +22,27 @@ DEALINGS IN THE SOFTWARE.
 #include "MicroBitUARTServiceFixed.h"
 #include "TeakTask.h"
 #include "TBCDriver.h"
-int motor_correction;
 extern MicroBit uBit;
-const int FIRST_VALUE = 0xDEADBEEF;
 
-int corrections[101] = {};
+const int kEmojiHouse = PBMAP(
+    PBMAP_ROW(0, 0, 1, 0, 0),
+    PBMAP_ROW(0, 1, 0, 1, 0),
+    PBMAP_ROW(1, 1, 0, 1, 1),
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_ROW(1, 1, 1, 1, 1),
+    PBMAP_FRAME_COUNT(1));
+
+short corrections[101] = {};
+const int FIRST_VALUE = 0xDEADBEEF;
 int prevEncod1 = FIRST_VALUE;
 int prevEncod2 = FIRST_VALUE;
-int test_power = 40;
-int revolutions = 0;
-const int THRESHOLD = 15;
-int one_values[THRESHOLD];
-int two_values[THRESHOLD];
+short test_power = 40;
+const short THRESHOLD = 15;
+short one_values[THRESHOLD];
+short two_values[THRESHOLD];
+short motor_correction;
+short revolutions = THRESHOLD+1;
+short counter = 0;
 int versionNumber = 10;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
@@ -124,7 +133,10 @@ void TeakTaskManager::Setup()
 //------------------------------------------------------------------------------
 void TeakTaskManager::SwitchTo(TeakTask* task)
 {
+  if (revolutions > THRESHOLD)
+  {
     m_currentTask = task;
+  }
 }
 
 #define FLASH_STR_DEFINE(_name, _value) const char _name[] = _value
@@ -166,68 +178,76 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       }
     }
     else if (event.source == MICROBIT_ID_TIMER) {
-      if (m_currentTask != gpMotorTask)
+      
+      if (counter < 100)
       {
-        if (revolutions == 0)
-        {
-            SetMotorPower(2, test_power);
-            //fiber_sleep(10);
-            SetMotorPower(1, -test_power);
+        counter++;
+      }
+      if (counter == 100 && revolutions == THRESHOLD+1)
+      {
+        revolutions = 0;
+        //uBit.display.print(kEmojiHouse);
+      }
+      
+      if (revolutions == 0)
+      {
+          SetMotorPower(2, test_power);
+          //fiber_sleep(10);
+          SetMotorPower(1, -test_power);
 
-            //fiber_sleep(200);
-        }
-        if (revolutions < THRESHOLD)
-        {
-            int current1 = ReadEncoder1();
-            int current2 = -1*ReadEncoder2();
-            int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
-            int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
-            one_values[revolutions] = change1;
-            two_values[revolutions] = change2;
-        //uBit.display.scroll('S');
-        //uBit.display.scroll(change1);
-        //uBit.display.scroll(change2);
-            prevEncod1 = current1;
-            prevEncod2 = current2;
-            revolutions++;
-            fiber_sleep(50);
-        }
-        if (revolutions == THRESHOLD)
-        {
+          //fiber_sleep(200);
+      }
+      if (revolutions < THRESHOLD)
+      {
+          int current1 = ReadEncoder1();
+          int current2 = -1*ReadEncoder2();
+          int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
+          int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
+          one_values[revolutions] = change1;
+          two_values[revolutions] = change2;
+      //uBit.display.scroll('S');
+      //uBit.display.scroll(change1);
+      //uBit.display.scroll(change2);
+          prevEncod1 = current1;
+          prevEncod2 = current2;
+          revolutions++;
+          fiber_sleep(50);
+      }
+      if (revolutions == THRESHOLD)
+      {
 
-            sort(one_values,one_values+THRESHOLD);
-            sort(two_values,two_values+THRESHOLD);
+          sort(one_values,one_values+THRESHOLD);
+          sort(two_values,two_values+THRESHOLD);
 
 
-            //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
-            int median1 = one_values[THRESHOLD/2];
-            int median2 = two_values[THRESHOLD/2];
-            int median_average = 1.0 * (median1 + median2) / 2;
-            int median_temp = 1.0 * (median2-median1) / median_average * test_power;
+          //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
+          int median1 = one_values[THRESHOLD/2];
+          int median2 = two_values[THRESHOLD/2];
+          int median_average = 1.0 * (median1 + median2) / 2;
+          int median_temp = 1.0 * (median2-median1) / median_average * test_power;
 
-            // uBit.display.scroll('S');
-            // uBit.display.scroll(sum1);
-            // uBit.display.scroll(sum2);
-            //uBit.display.scroll(median1);
-            //uBit.display.scroll(median2);
-            //uBit.display.scroll(median_temp);
-            corrections[test_power] = -median_temp;
-            SetMotorPower(1, 0);
-            SetMotorPower(2, 0);
-            if (test_power != 100)
-            {
-              revolutions = 0;
-              test_power += 10;
-              prevEncod1 = FIRST_VALUE;
-              prevEncod2 = FIRST_VALUE;
-              fiber_sleep(300);
-            }
-            else
-            {
-              motor_correction = -median_temp;
-              revolutions = 100;
-            }
-        }
+          // uBit.display.scroll('S');
+          // uBit.display.scroll(sum1);
+          // uBit.display.scroll(sum2);
+          //uBit.display.scroll(median1);
+          //uBit.display.scroll(median2);
+          //uBit.display.scroll(median_temp);
+          corrections[test_power] = -median_temp;
+          SetMotorPower(1, 0);
+          SetMotorPower(2, 0);
+          if (test_power != 100)
+          {
+            revolutions = 0;
+            test_power += 10;
+            prevEncod1 = FIRST_VALUE;
+            prevEncod2 = FIRST_VALUE;
+            fiber_sleep(300);
+          }
+          else
+          {
+            motor_correction = -median_temp;
+            revolutions = 100;
+          }
       }
     }
 
@@ -323,6 +343,8 @@ int pixVal = 1;
 // Called when a delimiter is found.
 void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
 {
+  if (revolutions > THRESHOLD)
+  {
     // If the event was called there should be a message
     ManagedString buff = uart->readUntil(eom, ASYNC);
     StringData *s = buff.leakData();
@@ -411,9 +433,13 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       const char* versionMessage = "(version:%d)";
       snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
       uart->send((uint8_t *)buffer, strlen(buffer));
+    } else if ((strncmp(str, "(calibrate)", 11) == 0)) {
+      revolutions = 0;
+      //uBit.display.print(kEmojiHouse);
     } else {
         // Debug option, if its not understood show the message.
         // uBit.display.scroll(str);
     }
     s->decr();
+  }
 }
