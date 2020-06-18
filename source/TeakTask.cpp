@@ -37,7 +37,8 @@ const int FIRST_VALUE = 0xDEADBEEF;
 int prevEncod1 = FIRST_VALUE;
 int prevEncod2 = FIRST_VALUE;
 short test_power = 40;
-const short THRESHOLD = 15;
+const unsigned short THRESHOLD = 40;
+const unsigned short INTERVAL = 30;
 short one_values[THRESHOLD];
 short two_values[THRESHOLD];
 short motor_correction;
@@ -78,6 +79,11 @@ TeakTask::TeakTask() {
     m_asyncImage = false;
     m_leftTask = NULL;
     m_rightTask = NULL;
+    // uBit.serial.send('\r');
+    // uBit.serial.send('\n');
+    // uBit.serial.send(-1);
+    // uBit.serial.send(' ');
+    // uBit.serial.send(-1);
 }
 
 //------------------------------------------------------------------------------
@@ -148,6 +154,82 @@ FLASH_STR_DEFINE(gStrA, "(a)");
 FLASH_STR_DEFINE(gStrB, "(b)");
 FLASH_STR_DEFINE(gStrAB, "(ab)");
 
+void TeakTaskManager::calibrate()
+{
+  // uBit.serial.send('\r');
+  // uBit.serial.send('\n');
+  while (revolutions != 100)
+  {
+    if (revolutions == 0)
+    {
+        SetMotorPower(2, test_power);
+        //fiber_sleep(10);
+        SetMotorPower(1, -test_power);
+
+        //fiber_sleep(200);
+    }
+    if (revolutions < THRESHOLD)
+    {
+        int current1 = ReadEncoder1();
+        int current2 = -1*ReadEncoder2();
+        int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
+        int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
+        one_values[revolutions] = change1;
+        two_values[revolutions] = change2;
+    //uBit.display.scroll('S');
+    //uBit.display.scroll(change1);
+    //uBit.display.scroll(change2);
+        prevEncod1 = current1;
+        prevEncod2 = current2;
+        revolutions++;
+        fiber_sleep(INTERVAL);
+    }
+    if (revolutions == THRESHOLD)
+    {
+
+        sort(one_values,one_values+THRESHOLD);
+        sort(two_values,two_values+THRESHOLD);
+
+
+        //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
+        int median1 = one_values[THRESHOLD/2-2] + one_values[THRESHOLD/2-1] + one_values[THRESHOLD/2+1]+one_values[THRESHOLD/2+2];
+        int median2 = two_values[THRESHOLD/2-2] +two_values[THRESHOLD/2-1] +two_values[THRESHOLD/2+1]+two_values[THRESHOLD/2+2];
+        int median_average = 1.0 * (median1 + median2) / 2;
+        int median_temp = 1.0 * (median2-median1) / median_average * test_power;
+
+        // uBit.display.scroll('S');
+        // uBit.display.scroll(sum1);
+        // uBit.display.scroll(sum2);
+        //uBit.display.scroll(median1);
+        //uBit.display.scroll(median2);
+        //uBit.display.scroll(median_temp);
+        // uBit.serial.send('\r');
+        // uBit.serial.send('\n');
+        // uBit.serial.send(median1);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(median2);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(median_temp);
+        corrections[test_power] = -median_temp;
+        SetMotorPower(1, 0);
+        SetMotorPower(2, 0);
+        if (test_power != 100)
+        {
+          revolutions = 0;
+          test_power += 10;
+          prevEncod1 = FIRST_VALUE;
+          prevEncod2 = FIRST_VALUE;
+          fiber_sleep(250);
+        }
+        else
+        {
+          motor_correction = -median_temp;
+          revolutions = 100;
+        }
+    }
+  }
+}
+
 //------------------------------------------------------------------------------
 void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 {
@@ -178,78 +260,24 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       }
     }
     else if (event.source == MICROBIT_ID_TIMER) {
-      
-      if (counter < 100)
-      {
-        counter++;
-      }
-      if (counter == 100 && revolutions == THRESHOLD+1)
-      {
-        revolutions = 0;
-        //uBit.display.print(kEmojiHouse);
-      }
-      
-      if (revolutions == 0)
-      {
-          SetMotorPower(2, test_power);
-          //fiber_sleep(10);
-          SetMotorPower(1, -test_power);
-
-          //fiber_sleep(200);
-      }
-      if (revolutions < THRESHOLD)
-      {
-          int current1 = ReadEncoder1();
-          int current2 = -1*ReadEncoder2();
-          int change1 = prevEncod1 == FIRST_VALUE ? 0 : current1-prevEncod1;
-          int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
-          one_values[revolutions] = change1;
-          two_values[revolutions] = change2;
-      //uBit.display.scroll('S');
-      //uBit.display.scroll(change1);
-      //uBit.display.scroll(change2);
-          prevEncod1 = current1;
-          prevEncod2 = current2;
-          revolutions++;
-          fiber_sleep(50);
-      }
-      if (revolutions == THRESHOLD)
-      {
-
-          sort(one_values,one_values+THRESHOLD);
-          sort(two_values,two_values+THRESHOLD);
-
-
-          //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
-          int median1 = one_values[THRESHOLD/2];
-          int median2 = two_values[THRESHOLD/2];
-          int median_average = 1.0 * (median1 + median2) / 2;
-          int median_temp = 1.0 * (median2-median1) / median_average * test_power;
-
-          // uBit.display.scroll('S');
-          // uBit.display.scroll(sum1);
-          // uBit.display.scroll(sum2);
-          //uBit.display.scroll(median1);
-          //uBit.display.scroll(median2);
-          //uBit.display.scroll(median_temp);
-          corrections[test_power] = -median_temp;
-          SetMotorPower(1, 0);
-          SetMotorPower(2, 0);
-          if (test_power != 100)
-          {
-            revolutions = 0;
-            test_power += 10;
-            prevEncod1 = FIRST_VALUE;
-            prevEncod2 = FIRST_VALUE;
-            fiber_sleep(300);
-          }
-          else
-          {
-            motor_correction = -median_temp;
-            revolutions = 100;
-          }
-      }
+      //   uBit.serial.send('\r');
+      //   uBit.serial.send('\n');
+      //   uBit.serial.send(revolutions);
+      //   uBit.serial.send(' ');
+      //   uBit.serial.send(counter);
+      //   uBit.serial.send(' ');
+      //   uBit.serial.send(THRESHOLD);
+      // if (counter < 100)
+      // {
+      //   counter++;
+      // }
+      // if (counter == 100 && revolutions == THRESHOLD+1)
+      // {
+      //   revolutions = 0;
+      //   calibrate();
+      // }
     }
+      
 
     if (m_currentTask != NULL) {
         if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
@@ -435,6 +463,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       uart->send((uint8_t *)buffer, strlen(buffer));
     } else if ((strncmp(str, "(calibrate)", 11) == 0)) {
       revolutions = 0;
+      calibrate();
       //uBit.display.print(kEmojiHouse);
     } else {
         // Debug option, if its not understood show the message.

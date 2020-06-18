@@ -159,8 +159,6 @@ void BlueToothTask::Event(MicroBitEvent event)
         m_state = kBlueToothIdle;
         m_asyncImage = false;
     } else if (event.source == MICROBIT_ID_TIMER) {
-          
-
         if (!m_advertising) {
             m_advertising = true;
             setAdvertising(m_advertising);
@@ -169,6 +167,13 @@ void BlueToothTask::Event(MicroBitEvent event)
         
         // Once connected to it can pop back to the top menu.
     } else if (event.source == MICROBIT_ID_TASK_SWAP) {
+        //       uBit.serial.send('\r');
+        // uBit.serial.send('\n');
+        // uBit.serial.send(1);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(1);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(1);
         // Shut down an pop to top
         gTaskManager.SwitchTo(gpTopMenuTask);
     }
