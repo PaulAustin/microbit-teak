@@ -33,17 +33,8 @@ const int kEmojiHouse = PBMAP(
     PBMAP_FRAME_COUNT(1));
 
 short corrections[101] = {};
-const int FIRST_VALUE = 0xDEADBEEF;
-int prevEncod1 = FIRST_VALUE;
-int prevEncod2 = FIRST_VALUE;
-short test_power = 40;
-const unsigned short THRESHOLD = 40;
-const unsigned short INTERVAL = 30;
-short one_values[THRESHOLD];
-short two_values[THRESHOLD];
 short motor_correction;
-short revolutions = THRESHOLD+1;
-short counter = 0;
+//short counter = 0;
 int versionNumber = 10;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
@@ -139,10 +130,7 @@ void TeakTaskManager::Setup()
 //------------------------------------------------------------------------------
 void TeakTaskManager::SwitchTo(TeakTask* task)
 {
-  if (revolutions > THRESHOLD)
-  {
-    m_currentTask = task;
-  }
+  m_currentTask = task;
 }
 
 #define FLASH_STR_DEFINE(_name, _value) const char _name[] = _value
@@ -156,6 +144,15 @@ FLASH_STR_DEFINE(gStrAB, "(ab)");
 
 void TeakTaskManager::calibrate()
 {
+  const int FIRST_VALUE = 0xDEADBEEF;
+  int prevEncod1 = FIRST_VALUE;
+  int prevEncod2 = FIRST_VALUE;
+  short test_power = 40;
+  const short THRESHOLD = 40;
+  const unsigned short INTERVAL = 30;
+  short one_values[THRESHOLD];
+  short two_values[THRESHOLD];
+  short revolutions = 0;
   // uBit.serial.send('\r');
   // uBit.serial.send('\n');
   while (revolutions != 100)
@@ -210,6 +207,8 @@ void TeakTaskManager::calibrate()
         // uBit.serial.send(median2);
         // uBit.serial.send(' ');
         // uBit.serial.send(median_temp);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(counter);
         corrections[test_power] = -median_temp;
         SetMotorPower(1, 0);
         SetMotorPower(2, 0);
@@ -260,21 +259,21 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       }
     }
     else if (event.source == MICROBIT_ID_TIMER) {
-      //   uBit.serial.send('\r');
-      //   uBit.serial.send('\n');
-      //   uBit.serial.send(revolutions);
-      //   uBit.serial.send(' ');
-      //   uBit.serial.send(counter);
-      //   uBit.serial.send(' ');
-      //   uBit.serial.send(THRESHOLD);
+        // uBit.serial.send('\r');
+        // uBit.serial.send('\n');
+        // uBit.serial.send(revolutions);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(counter);
+        // uBit.serial.send(' ');
+        // uBit.serial.send(THRESHOLD);
       // if (counter < 100)
       // {
       //   counter++;
       // }
-      // if (counter == 100 && revolutions == THRESHOLD+1)
+      // if (counter == 100)
       // {
-      //   revolutions = 0;
       //   calibrate();
+      //   counter++;
       // }
     }
       
@@ -371,104 +370,100 @@ int pixVal = 1;
 // Called when a delimiter is found.
 void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
 {
-  if (revolutions > THRESHOLD)
-  {
-    // If the event was called there should be a message
-    ManagedString buff = uart->readUntil(eom, ASYNC);
-    StringData *s = buff.leakData();
-    // Internal buffer is null terminated as well.
-    //teak::tstring command(s->data);
-    char* str = s->data;
-    int len = strlen(str);
-    int value = 0;
-    // one command to start with, the picture display
-    // P0123456789:
-    // the numebers are hex, the five bits are packed into two hex digits.
-    if ((strncmp(str, "(px:", 4) == 0) && len >= 14) {
-        str += 4;
-        for (int i = 0; i < 5; i++) {
-            char c1 = hexCharToInt(*str);
-            str++;
-            char c2 = hexCharToInt(*str);
-            str++;
-            image.setPixelValue(0, i, c1 & 0x01);
-            image.setPixelValue(1, i, c2 & 0x08);
-            image.setPixelValue(2, i, c2 & 0x04);
-            image.setPixelValue(3, i, c2 & 0x02);
-            image.setPixelValue(4, i, c2 & 0x01);
-        }
-        uBit.display.print(image);
-    } else if ((strncmp(str, "(sr:", 4) == 0) && len >= 5) {
-        str += 4;
-        value = atoi(str);
-        uBit.io.P1.setServoValue(value);
-        uBit.display.scroll("S");
-    } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
-        str += 3;
-        if(strncmp(str, "(1 2)", 5) == 0) {
-            if(strncmp(str + 6, "d", 1) == 0) {
-                value = atoi(str + 8);
+  // If the event was called there should be a message
+  ManagedString buff = uart->readUntil(eom, ASYNC);
+  StringData *s = buff.leakData();
+  // Internal buffer is null terminated as well.
+  //teak::tstring command(s->data);
+  char* str = s->data;
+  int len = strlen(str);
+  int value = 0;
+  // one command to start with, the picture display
+  // P0123456789:
+  // the numebers are hex, the five bits are packed into two hex digits.
+  if ((strncmp(str, "(px:", 4) == 0) && len >= 14) {
+      str += 4;
+      for (int i = 0; i < 5; i++) {
+          char c1 = hexCharToInt(*str);
+          str++;
+          char c2 = hexCharToInt(*str);
+          str++;
+          image.setPixelValue(0, i, c1 & 0x01);
+          image.setPixelValue(1, i, c2 & 0x08);
+          image.setPixelValue(2, i, c2 & 0x04);
+          image.setPixelValue(3, i, c2 & 0x02);
+          image.setPixelValue(4, i, c2 & 0x01);
+      }
+      uBit.display.print(image);
+  } else if ((strncmp(str, "(sr:", 4) == 0) && len >= 5) {
+      str += 4;
+      value = atoi(str);
+      uBit.io.P1.setServoValue(value);
+      uBit.display.scroll("S");
+  } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
+      str += 3;
+      if(strncmp(str, "(1 2)", 5) == 0) {
+          if(strncmp(str + 6, "d", 1) == 0) {
+              value = atoi(str + 8);
 
-                  int index = (-value+5)/10*10;
-                  int correction = corrections[index];
-                  correction = 1.0 * correction / index * (-value);
-                  if (correction > 0)
-                  {
-                    correction = 0;
-                  }
-                  SetMotorPower(1, value);
-                  SetMotorPower(2, -value+correction);
-
-            }
-        } else if(strncmp(str, "1", 1) == 0) {
-            if(strncmp(str + 2, "d", 1) == 0) {
-                value = atoi(str + 4);
+                int index = (-value+5)/10*10;
+                int correction = corrections[index];
+                correction = 1.0 * correction / index * (-value);
+                if (correction > 0)
+                {
+                  correction = 0;
+                }
                 SetMotorPower(1, value);
-            }
-        } else if(strncmp(str, "2", 1) == 0) {
-            if(strncmp(str + 2, "d", 1) == 0) {
-                value = atoi(str + 4);
+                SetMotorPower(2, -value+correction);
 
-                  int index = (-value+5)/10*10;
-                  int correction = corrections[index];
-                  correction = 1.0 * correction / index * (-value);
-                  if (correction > 0)
-                  {
-                    correction = 0;
-                  }
-                  SetMotorPower(2, -value+correction);
+          }
+      } else if(strncmp(str, "1", 1) == 0) {
+          if(strncmp(str + 2, "d", 1) == 0) {
+              value = atoi(str + 4);
+              SetMotorPower(1, value);
+          }
+      } else if(strncmp(str, "2", 1) == 0) {
+          if(strncmp(str + 2, "d", 1) == 0) {
+              value = atoi(str + 4);
 
-            }
-        }
-    } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
-        // Notes come in the form nn where n is the
-        // piano key number
-        value = atoi(str + 4);
-        if (value <= 13) {
-          // early version pay in register0 ( notes 1-12 ( + next C))
-          // bump to C4 (key number 40)
-          value += 39;
-        }
-        PlayNote(value, 64);
-    } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
-        value = atoi(str + 4);
-        m_animating = true;
-        uBit.display.scroll(value);
-    } else if ((strncmp(str, "(stop)", 6) == 0)) {
-        stopAll();
-    } else if((strncmp(str, "(version)", 9) == 0)) {
-      char buffer [20];
-      const char* versionMessage = "(version:%d)";
-      snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
-      uart->send((uint8_t *)buffer, strlen(buffer));
-    } else if ((strncmp(str, "(calibrate)", 11) == 0)) {
-      revolutions = 0;
-      calibrate();
-      //uBit.display.print(kEmojiHouse);
-    } else {
-        // Debug option, if its not understood show the message.
-        // uBit.display.scroll(str);
-    }
-    s->decr();
+                int index = (-value+5)/10*10;
+                int correction = corrections[index];
+                correction = 1.0 * correction / index * (-value);
+                if (correction > 0)
+                {
+                  correction = 0;
+                }
+                SetMotorPower(2, -value+correction);
+
+          }
+      }
+  } else if ((strncmp(str, "(nt:", 4) == 0) && len >= 5) {
+      // Notes come in the form nn where n is the
+      // piano key number
+      value = atoi(str + 4);
+      if (value <= 13) {
+        // early version pay in register0 ( notes 1-12 ( + next C))
+        // bump to C4 (key number 40)
+        value += 39;
+      }
+      PlayNote(value, 64);
+  } else if ((strncmp(str, "(pr:", 4) == 0) && len >= 5) {
+      value = atoi(str + 4);
+      m_animating = true;
+      uBit.display.scroll(value);
+  } else if ((strncmp(str, "(stop)", 6) == 0)) {
+      stopAll();
+  } else if((strncmp(str, "(version)", 9) == 0)) {
+    char buffer [20];
+    const char* versionMessage = "(version:%d)";
+    snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+    uart->send((uint8_t *)buffer, strlen(buffer));
+  } else if ((strncmp(str, "(calibrate)", 11) == 0)) {
+    calibrate();
+    //uBit.display.print(kEmojiHouse);
+  } else {
+      // Debug option, if its not understood show the message.
+      // uBit.display.scroll(str);
   }
+  s->decr();
 }
