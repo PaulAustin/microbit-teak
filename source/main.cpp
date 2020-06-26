@@ -34,6 +34,8 @@ MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
 char buffer [20];
+short tempCurrent;
+short accelCurrent;
 
 int main()
 {
@@ -65,20 +67,27 @@ int main()
 
     while(1) {
         tickCount++;
-        fiber_sleep(50);
+        fiber_sleep(100);
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
 
-        
+
         //processAccelerometerData(accelerometerData);
-        int accelerometerData = uBit.accelerometer.getX();
-        snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
-        uart->send((uint8_t *)buffer, strlen(buffer));
+        short accelerometerData = uBit.accelerometer.getX();
+        if(accelCurrent != accelerometerData){
+          snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
+          uart->send((uint8_t *)buffer, strlen(buffer));
+          accelCurrent = accelerometerData;
+        }
+
 
         //processThermometerData(thermometerData);
-        int thermometerData = thermometer.getTemperature();
-        snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
-        uart->send((uint8_t *)buffer, strlen(buffer));
+        short thermometerData = thermometer.getTemperature();
+        if(tempCurrent != thermometerData){
+          snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
+          uart->send((uint8_t *)buffer, strlen(buffer));
+          tempCurrent = thermometerData;
+        }
     }
     // release_fiber();
 }
