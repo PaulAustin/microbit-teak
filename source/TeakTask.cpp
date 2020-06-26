@@ -145,9 +145,12 @@ FLASH_STR_DEFINE(gStrAB, "(ab)");
 void TeakTaskManager::calibrate()
 {
   char buffer [20];
-  const char* startedMessage = "(cs:%d)";
-  snprintf(buffer, sizeof(buffer), startedMessage);
+  const char* message = "(cs)";
+  snprintf(buffer, sizeof(buffer), message);
   uart->send((uint8_t *)buffer, strlen(buffer));
+  //uBit.serial.send(buffer);
+
+
   const int FIRST_VALUE = 0xDEADBEEF;
   int prevEncod1 = FIRST_VALUE;
   int prevEncod2 = FIRST_VALUE;
@@ -231,10 +234,10 @@ void TeakTaskManager::calibrate()
         }
     }
   }
-  char anotherBuffer [20];
-  const char* finishedMessage = "(cf:%d)";
-  snprintf(anotherBuffer, sizeof(anotherBuffer), finishedMessage);
-  uart->send((uint8_t *)anotherBuffer, strlen(anotherBuffer));
+  message = "(cf)";
+  snprintf(buffer, sizeof(buffer), message);
+  uart->send((uint8_t *)buffer, strlen(buffer));
+  //uBit.serial.send(buffer);
 }
 
 //------------------------------------------------------------------------------
