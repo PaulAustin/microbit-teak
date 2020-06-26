@@ -60,8 +60,8 @@ int main()
     PlayNoteStream(ksNoteC5);
 
 
-    const char* accMessage = "(accel:%d)";
-    const char* tempMessage = "(temp:%d)";
+    const char* accMessage = "(ac:%d)";
+    const char* tempMessage = "(tp:%d)";
 
     while(1) {
         tickCount++;
