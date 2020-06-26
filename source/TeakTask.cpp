@@ -35,7 +35,7 @@ const int kEmojiHouse = PBMAP(
 short corrections[101] = {};
 short motor_correction;
 //short counter = 0;
-int versionNumber = 10;
+short versionNumber = 10;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
@@ -276,7 +276,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       //   counter++;
       // }
     }
-      
+
 
     if (m_currentTask != NULL) {
         if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
