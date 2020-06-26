@@ -144,6 +144,10 @@ FLASH_STR_DEFINE(gStrAB, "(ab)");
 
 void TeakTaskManager::calibrate()
 {
+  char buffer [20];
+  const char* startedMessage = "(cs:%d)";
+  snprintf(buffer, sizeof(buffer), startedMessage);
+  uart->send((uint8_t *)buffer, strlen(buffer));
   const int FIRST_VALUE = 0xDEADBEEF;
   int prevEncod1 = FIRST_VALUE;
   int prevEncod2 = FIRST_VALUE;
@@ -153,8 +157,8 @@ void TeakTaskManager::calibrate()
   short one_values[THRESHOLD];
   short two_values[THRESHOLD];
   short revolutions = 0;
-  // uBit.serial.send('\r');
-  // uBit.serial.send('\n');
+  //uBit.serial.send('\r');
+  //uBit.serial.send('\n');
   while (revolutions != 100)
   {
     if (revolutions == 0)
@@ -173,9 +177,9 @@ void TeakTaskManager::calibrate()
         int change2 = prevEncod2 == FIRST_VALUE ? 0 : current2-prevEncod2;
         one_values[revolutions] = change1;
         two_values[revolutions] = change2;
-    //uBit.display.scroll('S');
-    //uBit.display.scroll(change1);
-    //uBit.display.scroll(change2);
+        //uBit.display.scroll('S');
+        //uBit.display.scroll(change1);
+        //uBit.display.scroll(change2);
         prevEncod1 = current1;
         prevEncod2 = current2;
         revolutions++;
@@ -189,8 +193,8 @@ void TeakTaskManager::calibrate()
 
 
         //int temp = 1.0 * (sum2-sum1) / sum2 * test_power;
-        int median1 = one_values[THRESHOLD/2-2] + one_values[THRESHOLD/2-1] + one_values[THRESHOLD/2+1]+one_values[THRESHOLD/2+2];
-        int median2 = two_values[THRESHOLD/2-2] +two_values[THRESHOLD/2-1] +two_values[THRESHOLD/2+1]+two_values[THRESHOLD/2+2];
+        int median1 = one_values[THRESHOLD/2-1] + one_values[THRESHOLD/2]+one_values[THRESHOLD/2+1];
+        int median2 = two_values[THRESHOLD/2-1] +two_values[THRESHOLD/2]+two_values[THRESHOLD/2+1];
         int median_average = 1.0 * (median1 + median2) / 2;
         int median_temp = 1.0 * (median2-median1) / median_average * test_power;
 
@@ -200,13 +204,13 @@ void TeakTaskManager::calibrate()
         //uBit.display.scroll(median1);
         //uBit.display.scroll(median2);
         //uBit.display.scroll(median_temp);
-        // uBit.serial.send('\r');
-        // uBit.serial.send('\n');
-        // uBit.serial.send(median1);
-        // uBit.serial.send(' ');
-        // uBit.serial.send(median2);
-        // uBit.serial.send(' ');
-        // uBit.serial.send(median_temp);
+        //uBit.serial.send('\r');
+        //uBit.serial.send('\n');
+        //uBit.serial.send(median1);
+        //uBit.serial.send(' ');
+        //uBit.serial.send(median2);
+        //uBit.serial.send(' ');
+        //uBit.serial.send(median_temp);
         // uBit.serial.send(' ');
         // uBit.serial.send(counter);
         corrections[test_power] = -median_temp;
@@ -227,6 +231,10 @@ void TeakTaskManager::calibrate()
         }
     }
   }
+  char anotherBuffer [20];
+  const char* finishedMessage = "(cf:%d)";
+  snprintf(anotherBuffer, sizeof(anotherBuffer), finishedMessage);
+  uart->send((uint8_t *)anotherBuffer, strlen(anotherBuffer));
 }
 
 //------------------------------------------------------------------------------
@@ -451,14 +459,14 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       value = atoi(str + 4);
       m_animating = true;
       uBit.display.scroll(value);
-  } else if ((strncmp(str, "(stop)", 6) == 0)) {
+  } else if ((strncmp(str, "(st)", 4) == 0)) {
       stopAll();
-  } else if((strncmp(str, "(version)", 9) == 0)) {
+  } else if((strncmp(str, "(vs)", 4) == 0)) {
     char buffer [20];
-    const char* versionMessage = "(version:%d)";
+    const char* versionMessage = "(vs:%d)";
     snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
     uart->send((uint8_t *)buffer, strlen(buffer));
-  } else if ((strncmp(str, "(calibrate)", 11) == 0)) {
+  } else if ((strncmp(str, "(cl)", 4) == 0)) {
     calibrate();
     //uBit.display.print(kEmojiHouse);
   } else {
