@@ -6,4 +6,5 @@ b) Added the calibration ability
 
 --
 
-continue here...
+VERSION 11
+a) battery measuring
