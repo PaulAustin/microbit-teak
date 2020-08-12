@@ -23,17 +23,11 @@ DEALINGS IN THE SOFTWARE.
 #include <MicroBit.h>
 #include "TeakTask.h"
 #include "TBCDriver.h"
+
 extern MicroBit uBit;
-extern short motor_correction;
+
 //------------------------------------------------------------------------------
 // MotorTask - A task for direct control of the motors
-
-
-const short THRESHOLD = 15;
-const short TEST_POWER = 100;
-
-#define just_started(encod) (encod == FIRST_VALUE)
-
 class MotorTask : public TeakTask {
 public:
     MotorTask();
@@ -62,16 +56,10 @@ MotorTask::MotorTask()
     m_note = ksNoteC4;
     m_image = kMotoBase;
     m_runningBits = 0;
-    //calibrate();
 }
 
 bool m1State = false;
 bool m2State = false;
-
-
-
-
-
 
 void MotorTask::Event(MicroBitEvent event)
 {
@@ -80,20 +68,12 @@ void MotorTask::Event(MicroBitEvent event)
         if (event.source == MICROBIT_ID_BUTTON_A) {
             SetMotorPower(1, m1State ? 0 : -100);
             m1State = !m1State;
-
-
         } else if (event.source == MICROBIT_ID_BUTTON_B) {
-            SetMotorPower(2, m2State ? 0 : 100 + motor_correction);
+            SetMotorPower(2, m2State ? 0 : 100);
             m2State = !m2State;
-
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            //uBit.serial.send(motor_correction);
-            int input_power = TEST_POWER;
-            int correction = motor_correction * 1.0 / TEST_POWER * input_power;
-            int corrected_power = (TEST_POWER+correction);
-            //uBit.serial.send(corrected_power);
-            SetMotorPower(1, m1State ? 0 : -TEST_POWER);
-            SetMotorPower(2, m2State ? 0 : corrected_power);
+            SetMotorPower(1, m1State ? 0 : -100);
+            SetMotorPower(2, m2State ? 0 : 100);
             m2State = !m2State;
             m1State = !m1State;
         }
@@ -104,7 +84,7 @@ void MotorTask::Event(MicroBitEvent event)
         if (m2State) {
           m_runningBits |= kMotorRightForward;
         }
-        //m_image |= m_runningBits;
+        m_image |= m_runningBits;
     } else if(event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
         // Shut down an pop to top
         m_runningBits = 0;
@@ -135,7 +115,9 @@ void MotorTask::Event(MicroBitEvent event)
         PlayNoteStream(ksNoteB5);
         PlayNoteStream(ksNoteC5);
     } else if (event.source == MICROBIT_ID_TIMER) {
-        
+        m_image = kMotoBase | m_runningBits;
+        if (event.value & 0x08) {
+          m_image &= ~(0x04 << 10);
+        }
     }
-    
 }

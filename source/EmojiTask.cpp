@@ -141,6 +141,5 @@ void EmojiTask::Event(MicroBitEvent event)
         PlayNoteStream(ksNoteC5);
       }
     } else if (event.source == MICROBIT_ID_TIMER) {
-
     }
 }

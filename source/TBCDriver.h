@@ -212,6 +212,5 @@ void PlayNoteStream(char value);
 void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();
-int ReadEncoder1();
-int ReadEncoder2();
+
 #endif

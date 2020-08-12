@@ -34,12 +34,12 @@ MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
 char buffer [20];
-short versionNumber = 10;
+
 int main()
 {
     // Initialise the micro:bit runtime.
     uBit.init();
-    TBCInit();
+
     spi.format(8, 3);
     spi.frequency(1000000);
 
@@ -59,9 +59,8 @@ int main()
     PlayNoteStream(ksNoteB5);
     PlayNoteStream(ksNoteC5);
 
-
-    const char* accMessage = "(ac:%d)";
-    const char* tempMessage = "(tp:%d)";
+    const char* accMessage = "(accel:%d)";
+    const char* tempMessage = "(temp:%d)";
 
     while(1) {
         tickCount++;
@@ -69,7 +68,6 @@ int main()
         tick.value = tickCount;
         gTaskManager.MicrobitDalEvent(tick);
 
-        
         //processAccelerometerData(accelerometerData);
         int accelerometerData = uBit.accelerometer.getX();
         snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
@@ -79,14 +77,6 @@ int main()
         int thermometerData = thermometer.getTemperature();
         snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
         uart->send((uint8_t *)buffer, strlen(buffer));
-
-		if (versionNumber != -1)
-		{
-			const char* versionMessage = "(vs:%d)";
-			snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
-			uBit.serial.send(buffer);
-			uart->send((uint8_t *)buffer, strlen(buffer));
-		}
     }
     // release_fiber();
 }
