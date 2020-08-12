@@ -87,11 +87,11 @@ void MotorTask::Event(MicroBitEvent event)
             m2State = !m2State;
 
         } else if (event.source == MICROBIT_ID_BUTTON_AB) {
-            uBit.serial.send(motor_correction);
+            //uBit.serial.send(motor_correction);
             int input_power = TEST_POWER;
             int correction = motor_correction * 1.0 / TEST_POWER * input_power;
             int corrected_power = (TEST_POWER+correction);
-            uBit.serial.send(corrected_power);
+            //uBit.serial.send(corrected_power);
             SetMotorPower(1, m1State ? 0 : -TEST_POWER);
             SetMotorPower(2, m2State ? 0 : corrected_power);
             m2State = !m2State;

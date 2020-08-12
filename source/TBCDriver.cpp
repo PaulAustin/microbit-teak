@@ -45,13 +45,13 @@ void SetMotorPower(int motor, int power)
   } else if (power < -100) {
       power = -100;
   }
-  /*
-  uBit.serial.send('\r');
-  uBit.serial.send('\n');
-  uBit.serial.send(motor);
-  uBit.serial.send(' ');
-  uBit.serial.send(power);
-  */
+  
+//   uBit.serial.send('\r');
+//   uBit.serial.send('\n');
+//   uBit.serial.send(motor);
+//   uBit.serial.send(' ');
+//   uBit.serial.send(power);
+  
   uBit.io.P16.setDigitalValue(0);
   if (motor == 1) {
       spi.write(kRM_Motor1Power);
@@ -107,8 +107,7 @@ void SetMotorPower(int motor, int power)
 }
 #endif
 
-int reply[8] = {0};
-uint8_t parts[8] = {0}; 
+int reply[4] = {0};
 
 int ReadEncoder1() {
   uBit.io.P16.setDigitalValue(0);

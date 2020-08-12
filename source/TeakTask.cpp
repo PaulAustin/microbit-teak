@@ -35,7 +35,7 @@ const int kEmojiHouse = PBMAP(
 short corrections[101] = {};
 short motor_correction;
 //short counter = 0;
-short versionNumber = 10;
+extern short versionNumber;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
@@ -287,7 +287,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       //   counter++;
       // }
     }
-
+      
 
     if (m_currentTask != NULL) {
         if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
@@ -464,11 +464,8 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       uBit.display.scroll(value);
   } else if ((strncmp(str, "(st)", 4) == 0)) {
       stopAll();
-  } else if((strncmp(str, "(vs)", 4) == 0)) {
-    char buffer [20];
-    const char* versionMessage = "(vs:%d)";
-    snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
-    uart->send((uint8_t *)buffer, strlen(buffer));
+  } else if((strncmp(str, "(vr)", 4) == 0)) {
+    versionNumber = -1;
   } else if ((strncmp(str, "(cl)", 4) == 0)) {
     calibrate();
     //uBit.display.print(kEmojiHouse);
