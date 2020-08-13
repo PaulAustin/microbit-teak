@@ -248,7 +248,10 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
             m_btConnected = true;
             uBit.display.print('C');
         } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
-			versionNumber = versionNumber * -1;
+			if (versionNumber < 0)
+			{
+				versionNumber = versionNumber * -1;
+			}
             m_btConnected = false;
             uBit.display.print('D');
         }
@@ -466,7 +469,10 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
   } else if ((strncmp(str, "(st)", 4) == 0)) {
       stopAll();
   } else if((strncmp(str, "(vr)", 4) == 0)) {
-    versionNumber = versionNumber*-1;
+	  if (versionNumber > 0)
+	  {
+		versionNumber = versionNumber*-1;
+	  }
   } else if ((strncmp(str, "(cl)", 4) == 0)) {
     calibrate();
     //uBit.display.print(kEmojiHouse);
