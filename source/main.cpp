@@ -34,7 +34,7 @@ MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
 char buffer [20];
-short versionNumber = 10;
+short versionNumber;
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -42,7 +42,7 @@ int main()
     TBCInit();
     spi.format(8, 3);
     spi.frequency(1000000);
-
+	versionNumber = 10;
     gTaskManager.Setup();
 
     // Run the main loop
