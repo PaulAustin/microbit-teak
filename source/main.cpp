@@ -61,8 +61,8 @@ int main()
     PlayNoteStream(ksNoteC5);
 
 
-    const char* accMessage = "(accel:%d)";
-    const char* tempMessage = "(temp:%d)";
+    const char* accMessage = "(ac:%d)";
+    const char* tempMessage = "(tp:%d)";
 
     while(1) {
 		// uBit.serial.send("still here 1");
@@ -81,7 +81,7 @@ int main()
 			int accelerometerData = uBit.accelerometer.getX();
 			// uBit.serial.send("still here 6");
 			snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
-			uBit.serial.send(buffer);
+			// uBit.serial.send(buffer);
 			// uBit.serial.send("still here 7");
 			uart->send((uint8_t *)buffer, strlen(buffer));
 			// uBit.serial.send("still here 8");
@@ -90,11 +90,11 @@ int main()
 			int thermometerData = thermometer.getTemperature();
 			// uBit.serial.send("still here 9");
 			snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
-			uBit.serial.send(buffer);
+			// uBit.serial.send(buffer);
 			uart->send((uint8_t *)buffer, strlen(buffer)); //causes crash when app connects then disconnects
 			// uBit.serial.send("still here 11");
 			// uBit.serial.send(" ");
-			uBit.serial.send(versionNumber);
+			// uBit.serial.send(versionNumber);
 			if (versionNumber > 0)
 			{
 				const char* versionMessage = "(vs:%d)";
@@ -103,8 +103,8 @@ int main()
 				uart->send((uint8_t *)buffer, strlen(buffer));
 			}
 		}
-		uBit.serial.send(tickCount);
-		uBit.serial.send("\r\n");
+		// uBit.serial.send(tickCount);
+		// uBit.serial.send("\r\n");
 
     }
     // release_fiber();
