@@ -253,6 +253,7 @@ int MicroBitUARTServiceFixed::putc(char c, MicroBitSerialMode mode)
 int MicroBitUARTServiceFixed::send(const uint8_t *buf, int length, MicroBitSerialMode mode)
 {
 	// uBit.serial.send(" received1 ");
+	fiber_sleep(10);
     if(length < 1 || mode == SYNC_SPINWAIT)
         return MICROBIT_INVALID_PARAMETER;
 
@@ -265,6 +266,7 @@ int MicroBitUARTServiceFixed::send(const uint8_t *buf, int length, MicroBitSeria
 
     int bytesWritten = 0;
 	// uBit.serial.send(" received2 ");
+	fiber_sleep(10);
 
     while(bytesWritten < length && ble.getGapState().connected && updatesEnabled)
     {
@@ -291,14 +293,14 @@ int MicroBitUARTServiceFixed::send(const uint8_t *buf, int length, MicroBitSeria
         circularCopy(txBuffer, txBufferSize, temp, txBufferTail, txBufferHead);
 
 		// uBit.serial.send(" received3 ");
-
+		fiber_sleep(10);
         if(mode == SYNC_SLEEP)
             fiber_wake_on_event(MICROBIT_ID_NOTIFY, MICROBIT_UART_S_EVT_TX_EMPTY);
 		// uBit.serial.send(" received4 ");
-		fiber_sleep(30);
+		fiber_sleep(10);
         ble.gattServer().write(rxCharacteristic->getValueAttribute().getHandle(), temp, size);
 		// uBit.serial.send(" received5 ");
-		// fiber_sleep(10);
+		fiber_sleep(10);
 
         if(mode == SYNC_SLEEP)
             schedule();
@@ -307,7 +309,7 @@ int MicroBitUARTServiceFixed::send(const uint8_t *buf, int length, MicroBitSeria
         ble.gattServer().areUpdatesEnabled(*rxCharacteristic, &updatesEnabled);
     }
 	// uBit.serial.send(" received6 ");
-	// fiber_sleep(10);
+	fiber_sleep(10);
     return bytesWritten;
 }
 

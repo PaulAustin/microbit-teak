@@ -35,7 +35,7 @@ MicroBitThermometer thermometer(storage);
 
 char buffer [20];
 short versionNumber;
-
+bool connected;
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -45,7 +45,7 @@ int main()
     spi.frequency(1000000);
     gTaskManager.Setup();
 	versionNumber = -10;
-
+	connected = false;
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
     int tickCount = 0;
@@ -61,8 +61,8 @@ int main()
     PlayNoteStream(ksNoteC5);
 
 
-    const char* accMessage = "(ac:%d)";
-    const char* tempMessage = "(tp:%d)";
+    const char* accMessage = "(accel:%d)";
+    const char* tempMessage = "(temp:%d)";
 
     while(1) {
 		// uBit.serial.send("still here 1");
@@ -76,29 +76,32 @@ int main()
 		// uBit.serial.send("still here 5");
         
         //processAccelerometerData(accelerometerData);
-        int accelerometerData = uBit.accelerometer.getX();
-		// uBit.serial.send("still here 6");
-        snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
-		uBit.serial.send(buffer);
-		// uBit.serial.send("still here 7");
-        uart->send((uint8_t *)buffer, strlen(buffer));
-		// uBit.serial.send("still here 8");
-
-        //processThermometerData(thermometerData);
-        int thermometerData = thermometer.getTemperature();
-		// uBit.serial.send("still here 9");
-        snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
-		uBit.serial.send(buffer);
-        uart->send((uint8_t *)buffer, strlen(buffer)); //causes crash when app connects then disconnects
-		// uBit.serial.send("still here 11");
-		// uBit.serial.send(" ");
-		uBit.serial.send(versionNumber);
-		if (versionNumber > 0)
+		if (connected)
 		{
-			const char* versionMessage = "(vs:%d)";
-			snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
-			// uBit.serial.send(buffer);
+			int accelerometerData = uBit.accelerometer.getX();
+			// uBit.serial.send("still here 6");
+			snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
+			uBit.serial.send(buffer);
+			// uBit.serial.send("still here 7");
 			uart->send((uint8_t *)buffer, strlen(buffer));
+			// uBit.serial.send("still here 8");
+
+			//processThermometerData(thermometerData);
+			int thermometerData = thermometer.getTemperature();
+			// uBit.serial.send("still here 9");
+			snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
+			uBit.serial.send(buffer);
+			uart->send((uint8_t *)buffer, strlen(buffer)); //causes crash when app connects then disconnects
+			// uBit.serial.send("still here 11");
+			// uBit.serial.send(" ");
+			uBit.serial.send(versionNumber);
+			if (versionNumber > 0)
+			{
+				const char* versionMessage = "(vs:%d)";
+				snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+				// uBit.serial.send(buffer);
+				uart->send((uint8_t *)buffer, strlen(buffer));
+			}
 		}
 		uBit.serial.send(tickCount);
 		uBit.serial.send("\r\n");

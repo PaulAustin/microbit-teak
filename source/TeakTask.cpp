@@ -36,6 +36,7 @@ short corrections[101] = {};
 short motor_correction;
 //short counter = 0;
 extern short versionNumber;
+extern bool connected;
 //------------------------------------------------------------------------------
 // Set up the intial task to be the boot task, this will
 // run the startup screen
@@ -246,10 +247,12 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
     if (event.source == MICROBIT_ID_BLE) {
         if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
             m_btConnected = true;
+			connected = true;
             uBit.display.print('C');
 			versionNumber = 10;
         } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
             m_btConnected = false;
+			connected = false;
             uBit.display.print('D');
 			versionNumber = -10;
         }
@@ -464,7 +467,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       value = atoi(str + 4);
       m_animating = true;
       uBit.display.scroll(value);
-	  versionNumber = -10;
+	//   versionNumber = -10;
 	//   MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
 	//   	  MicrobitDalEvent(tick);
 	//   	  	// uBit.display.scroll("1");
