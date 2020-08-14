@@ -35,6 +35,7 @@ MicroBitThermometer thermometer(storage);
 
 char buffer [20];
 short versionNumber;
+
 int main()
 {
     // Initialise the micro:bit runtime.
@@ -42,8 +43,8 @@ int main()
     TBCInit();
     spi.format(8, 3);
     spi.frequency(1000000);
-	versionNumber = 10;
     gTaskManager.Setup();
+	versionNumber = -10;
 
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
@@ -64,22 +65,34 @@ int main()
     const char* tempMessage = "(tp:%d)";
 
     while(1) {
+		// uBit.serial.send("still here 1");
         tickCount++;
+		// uBit.serial.send("still here 2");
         fiber_sleep(50);
+		// uBit.serial.send("still here 3");
         tick.value = tickCount;
+		// uBit.serial.send("still here 4");
         gTaskManager.MicrobitDalEvent(tick);
-
+		// uBit.serial.send("still here 5");
         
         //processAccelerometerData(accelerometerData);
         int accelerometerData = uBit.accelerometer.getX();
+		// uBit.serial.send("still here 6");
         snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
+		uBit.serial.send(buffer);
+		// uBit.serial.send("still here 7");
         uart->send((uint8_t *)buffer, strlen(buffer));
+		// uBit.serial.send("still here 8");
 
         //processThermometerData(thermometerData);
         int thermometerData = thermometer.getTemperature();
+		// uBit.serial.send("still here 9");
         snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
-        uart->send((uint8_t *)buffer, strlen(buffer));
-
+		uBit.serial.send(buffer);
+        uart->send((uint8_t *)buffer, strlen(buffer)); //causes crash when app connects then disconnects
+		// uBit.serial.send("still here 11");
+		// uBit.serial.send(" ");
+		uBit.serial.send(versionNumber);
 		if (versionNumber > 0)
 		{
 			const char* versionMessage = "(vs:%d)";
@@ -87,6 +100,9 @@ int main()
 			// uBit.serial.send(buffer);
 			uart->send((uint8_t *)buffer, strlen(buffer));
 		}
+		uBit.serial.send(tickCount);
+		uBit.serial.send("\r\n");
+
     }
     // release_fiber();
 }

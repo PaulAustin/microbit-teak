@@ -247,13 +247,11 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
         if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
             m_btConnected = true;
             uBit.display.print('C');
+			versionNumber = 10;
         } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
-			if (versionNumber < 0)
-			{
-				versionNumber = versionNumber * -1;
-			}
             m_btConnected = false;
             uBit.display.print('D');
+			versionNumber = -10;
         }
     //} else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
         //if (event.source == MICROBIT_ID_BUTTON_B) {
@@ -466,13 +464,44 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       value = atoi(str + 4);
       m_animating = true;
       uBit.display.scroll(value);
+	  versionNumber = -10;
+	//   MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
+	//   	  MicrobitDalEvent(tick);
+	//   	  	// uBit.display.scroll("1");
+	// 	char buffer [20];
+	// 	// uBit.display.scroll("2");
+	// 	const char* versionMessage = "(vs:%d)";
+	// 	// uBit.display.scroll("3");
+
+	// 	snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+	// 	// uBit.display.scroll("4");
+
+	// 	uBit.serial.send(buffer);
+	// 	// uBit.display.scroll("5");
+
+	// 	uart->send((uint8_t *)buffer, strlen(buffer));
+		// uBit.display.scroll("6");
   } else if ((strncmp(str, "(st)", 4) == 0)) {
       stopAll();
+
+
   } else if((strncmp(str, "(vr)", 4) == 0)) {
-	  if (versionNumber > 0)
-	  {
-		versionNumber = versionNumber*-1;
-	  }
+	// uBit.display.scroll("1");
+    // char buffer [20];
+	// uBit.display.scroll("2");
+	// const char* versionMessage = "(vs:%d)";
+	// uBit.display.scroll("3");
+
+	// snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+	// uBit.display.scroll("4");
+
+	// uBit.serial.send(buffer);
+	// uBit.display.scroll("5");
+
+	// uart->send((uint8_t *)buffer, strlen(buffer));
+	// uBit.display.scroll("6");
+	versionNumber = -10;
+
   } else if ((strncmp(str, "(cl)", 4) == 0)) {
     calibrate();
     //uBit.display.print(kEmojiHouse);
