@@ -150,8 +150,9 @@ enum SolfegeNotes{
 
 enum RegMap_t
 {
-	kRM_SystemFMVers1 = 1,
-	kRM_SystemFMVers2,
+	kRM_SystemFWHWVer = 1,
+	kRM_SystemVbat_mV,
+	kRM_ByteOrderTest,
 	kRM_SystemStatus,
 	kRM_SystemIdle,
 	kRM_SystemStop,		     // Stop all IO,turn off all GPIO
