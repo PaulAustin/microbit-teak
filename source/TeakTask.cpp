@@ -241,20 +241,25 @@ void TeakTaskManager::calibrate()
   //uBit.serial.send(buffer);
 }
 
+void TeakTaskManager::disconnect() {
+    m_btConnected = false;
+    connected = false;
+    uBit.display.print('D');
+    versionNumber = -10;
+
+}
+
 //------------------------------------------------------------------------------
 void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
 {
     if (event.source == MICROBIT_ID_BLE) {
         if (event.value == MICROBIT_BLE_EVT_CONNECTED) {
             m_btConnected = true;
-			connected = true;
+      			connected = true;
             uBit.display.print('C');
-			versionNumber = 10;
+      			versionNumber = 10;
         } else if (event.value == MICROBIT_BLE_EVT_DISCONNECTED) {
-            m_btConnected = false;
-			connected = false;
-            uBit.display.print('D');
-			versionNumber = -10;
+            disconnect();
         }
     //} else if (event.value == MICROBIT_BUTTON_EVT_HOLD) {
         //if (event.source == MICROBIT_ID_BUTTON_B) {
@@ -292,7 +297,7 @@ void TeakTaskManager::MicrobitDalEvent(MicroBitEvent event)
       //   counter++;
       // }
     }
-      
+
 
     if (m_currentTask != NULL) {
         if (event.source == MICROBIT_ID_BUTTON_B && event.value == MICROBIT_BUTTON_EVT_HOLD) {
@@ -417,6 +422,7 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
       uBit.io.P1.setServoValue(value);
       uBit.display.scroll("S");
   } else if ((strncmp(str, "(m:", 3) == 0) && len >= 4) {
+      // uBit.display.print('M');
       str += 3;
       if(strncmp(str, "(1 2)", 5) == 0) {
           if(strncmp(str + 6, "d", 1) == 0) {
@@ -508,6 +514,8 @@ void TeakTaskManager::MicrobitBtEvent(MicroBitEvent)
   } else if ((strncmp(str, "(cl)", 4) == 0)) {
     calibrate();
     //uBit.display.print(kEmojiHouse);
+  } else if ((strncmp(str, "(dc)", 4) == 0)) {
+    disconnect();
   } else {
       // Debug option, if its not understood show the message.
       // uBit.display.scroll(str);

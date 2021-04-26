@@ -66,6 +66,7 @@ public:
     void Setup();
     void MicrobitDalEvent(MicroBitEvent event);
     void MicrobitBtEvent(MicroBitEvent event);
+    void disconnect();
     void calibrate();
     void SwitchTo(TeakTask* task);
     char* BotName() { return m_name; };
