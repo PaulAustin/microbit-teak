@@ -34,17 +34,18 @@ MicroBitStorage storage;
 MicroBitThermometer thermometer(storage);
 
 char buffer [20];
-
+short versionNumber;
+bool connected;
 int main()
 {
     // Initialise the micro:bit runtime.
     uBit.init();
-
+    TBCInit();
     spi.format(8, 3);
     spi.frequency(1000000);
-
     gTaskManager.Setup();
-
+	versionNumber = -10;
+	connected = false;
     // Run the main loop
     MicroBitEvent tick(MICROBIT_ID_TIMER, 0, CREATE_ONLY);
     int tickCount = 0;
@@ -59,24 +60,52 @@ int main()
     PlayNoteStream(ksNoteB5);
     PlayNoteStream(ksNoteC5);
 
-    const char* accMessage = "(accel:%d)";
-    const char* tempMessage = "(temp:%d)";
+
+    const char* accMessage = "(ac:%d)";
+    const char* tempMessage = "(tp:%d)";
 
     while(1) {
+		// uBit.serial.send("still here 1");
         tickCount++;
+		// uBit.serial.send("still here 2");
         fiber_sleep(50);
+		// uBit.serial.send("still here 3");
         tick.value = tickCount;
+		// uBit.serial.send("still here 4");
         gTaskManager.MicrobitDalEvent(tick);
-
+		// uBit.serial.send("still here 5");
+        
         //processAccelerometerData(accelerometerData);
-        int accelerometerData = uBit.accelerometer.getX();
-        snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
-        uart->send((uint8_t *)buffer, strlen(buffer));
+		if (connected)
+		{
+			int accelerometerData = uBit.accelerometer.getX();
+			// uBit.serial.send("still here 6");
+			snprintf(buffer, sizeof(buffer), accMessage, accelerometerData);
+			// uBit.serial.send(buffer);
+			// uBit.serial.send("still here 7");
+			uart->send((uint8_t *)buffer, strlen(buffer));
+			// uBit.serial.send("still here 8");
 
-        //processThermometerData(thermometerData);
-        int thermometerData = thermometer.getTemperature();
-        snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
-        uart->send((uint8_t *)buffer, strlen(buffer));
+			//processThermometerData(thermometerData);
+			int thermometerData = thermometer.getTemperature();
+			// uBit.serial.send("still here 9");
+			snprintf(buffer, sizeof(buffer), tempMessage, thermometerData);
+			// uBit.serial.send(buffer);
+			uart->send((uint8_t *)buffer, strlen(buffer)); //causes crash when app connects then disconnects
+			// uBit.serial.send("still here 11");
+			// uBit.serial.send(" ");
+			// uBit.serial.send(versionNumber);
+			if (versionNumber > 0)
+			{
+				const char* versionMessage = "(vs:%d)";
+				snprintf(buffer, sizeof(buffer), versionMessage, versionNumber);
+				// uBit.serial.send(buffer);
+				uart->send((uint8_t *)buffer, strlen(buffer));
+			}
+		}
+		// uBit.serial.send(tickCount);
+		// uBit.serial.send("\r\n");
+
     }
     // release_fiber();
 }

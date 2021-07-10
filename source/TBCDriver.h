@@ -150,8 +150,9 @@ enum SolfegeNotes{
 
 enum RegMap_t
 {
-	kRM_SystemFMVers1 = 1,
-	kRM_SystemFMVers2,
+	kRM_SystemFWHWVer = 1,
+	kRM_SystemVbat_mV,
+	kRM_ByteOrderTest,
 	kRM_SystemStatus,
 	kRM_SystemIdle,
 	kRM_SystemStop,		     // Stop all IO,turn off all GPIO
@@ -212,5 +213,6 @@ void PlayNoteStream(char value);
 void PlayNote(int value, int duration);
 void SetMotorPower(int motor, int power);
 void stopAll();
-
+int ReadEncoder1();
+int ReadEncoder2();
 #endif

@@ -32,7 +32,7 @@ check `~/.yotta`, `project/.yotta_modules`, and `project/.yotta_targets`
 for correct file ownership  
 
 installing yotta on catalina ( and perhasp later)
-Here are some suggestions. Python installaions can be a bit complex. 
+Here are some suggestions. Python installaions can be a bit complex.
 (0) I installed the latest python from python org (this gave me pip and pip3)
 
 ```
@@ -44,13 +44,13 @@ pip3 install virtualenv
 (3) install brew for the mac and some tools necessary for embedded AR  cross development.
 
 ```
-virtualenv -p /usr/bin/python2.7 venv27 
+virtualenv -p /usr/bin/python2.7 venv27
 source ./venv27/bin/activate   
 pip install yotta
 
-brew tap ARMmbed/homebrew-formulae 
+brew tap ARMmbed/homebrew-formulae
 brew install python cmake ninja arm-none-eabi-gcc    
-brew insall srecord
+brew install srecord
 ```
 
-SDG - Paul 
+SDG - Paul
