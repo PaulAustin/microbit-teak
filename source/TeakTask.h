@@ -41,7 +41,6 @@ int PBmapUnpack(int pbmap, uint8_t* bits, int width);
 // Adding a new event source
 #define MICROBIT_ID_TIMER 512
 #define MICROBIT_ID_TASK_SWAP 513
-
 // Case # 21-05-398
 
 class TeakTask {
@@ -67,6 +66,8 @@ public:
     void Setup();
     void MicrobitDalEvent(MicroBitEvent event);
     void MicrobitBtEvent(MicroBitEvent event);
+    void disconnect();
+    void calibrate();
     void SwitchTo(TeakTask* task);
     char* BotName() { return m_name; };
     bool m_animating;
